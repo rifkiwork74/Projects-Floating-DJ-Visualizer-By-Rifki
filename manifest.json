@@ -1,0 +1,29 @@
+{
+  "format": 1,
+  "kind": "project",
+  "name": "Floating DJ Visualizer 1.0",
+  "description": "",
+  "author": "by Rifki V1. 0",
+  "createdBy": "CodeAssist",
+  "exportedAt": 1794147860450,
+  "isAndroid": true,
+  "packageName": "com.floatingdj.visualizer",
+  "moduleCount": 1,
+  "modules": [
+    "app"
+  ],
+  "moduleInfos": [
+    {
+      "name": "app",
+      "path": "app",
+      "type": "android-app",
+      "files": 22,
+      "size": 107034
+    }
+  ],
+  "fileCount": 26,
+  "uncompressedSize": 108510,
+  "hasBundledDeps": true,
+  "iconEntry": null,
+  "store": null
+}

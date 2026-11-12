@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#090D16"
+    android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- HEADER -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="FLOATING DJ"
+                    android:textColor="#FFFFFF"
+                    android:textSize="25sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PRO AUDIO VISUALIZER"
+                    android:textColor="#8E9AAF"
+                    android:textSize="10sp"
+                    android:letterSpacing="0.18" />
+
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="● READY"
+                    android:textColor="#6EE7B7"
+                    android:textSize="11sp"
+                    android:padding="10dp"
+                    android:background="@drawable/bg_glass_panel" />
+
+                <TextView
+                    android:id="@+id/btnPositionSettings"
+                    android:layout_width="46dp"
+                    android:layout_height="46dp"
+                    android:layout_marginStart="8dp"
+                    android:text="⚙"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_glass_panel"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+        <!-- VISUALIZER PREVIEW -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="18dp"
+            android:background="@drawable/bg_glass_panel"
+            android:layout_marginTop="28dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="LIVE VISUALIZER"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="DEMO"
+                    android:textColor="#BCA5FF"
+                    android:textSize="10sp" />
+
+            </LinearLayout>
+
+            <!-- EQUALIZER BARS -->
+            <LinearLayout
+                android:id="@+id/equalizerBars"
+                android:layout_width="match_parent"
+                android:layout_height="165dp"
+                android:orientation="horizontal"
+                android:gravity="center|bottom"
+                android:clipChildren="false"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="18dp">
+
+                <View
+                    android:layout_width="15dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_spectrum_bar"
+                    android:layout_margin="7dp" />
+
+                <View
+                    android:layout_width="15dp"
+                    android:layout_height="85dp"
+                    android:background="@drawable/bg_spectrum_bar"
+                    android:layout_margin="7dp" />
+
+                <View
+                    android:layout_width="15dp"
+                    android:layout_height="120dp"
+                    android:background="@drawable/bg_spectrum_bar"
+                    android:layout_margin="7dp" />
+
+                <View
+                    android:layout_width="15dp"
+                    android:layout_height="70dp"
+                    android:background="@drawable/bg_spectrum_bar"
+                    android:layout_margin="7dp" />
+
+                <View
+                    android:layout_width="15dp"
+                    android:layout_height="100dp"
+                    android:background="@drawable/bg_spectrum_bar"
+                    android:layout_margin="7dp" />
+
+            </LinearLayout>
+
+            <!-- FREQUENCY LABELS -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="BASS"
+                    android:textColor="#F87171"
+                    android:textSize="10sp"
+                    android:gravity="center" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="MID"
+                    android:textColor="#FACC15"
+                    android:textSize="10sp"
+                    android:gravity="center" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="TREBLE"
+                    android:textColor="#22D3EE"
+                    android:textSize="10sp"
+                    android:gravity="center" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- MODE SELECTOR -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VISUALIZER MODE"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:layout_marginTop="28dp"
+            android:layout_marginBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:weightSum="2">
+
+            <TextView
+                android:id="@+id/btnModeVertical"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:gravity="center"
+                android:text="VERTICAL RGB"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:background="@drawable/bg_mode_active" />
+
+            <TextView
+                android:id="@+id/btnModeHorizontal"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:gravity="center"
+                android:text="HORIZONTAL DJ"
+                android:textColor="#B5BDD0"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:background="@drawable/bg_mode_inactive" />
+
+        </LinearLayout>
+
+        <!-- COLOR STUDIO -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="18dp"
+            android:background="@drawable/bg_glass_panel"
+            android:layout_marginTop="22dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="COLOR STUDIO"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Create your own RGB palette"
+                android:textColor="#8E9AAF"
+                android:textSize="11sp"
+                android:layout_marginTop="5dp" />
+
+            <!-- COLOR PRESETS -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="18dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="●"
+                    android:textColor="#EF4444"
+                    android:textSize="25sp"
+                    android:gravity="center" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="●"
+                    android:textColor="#FACC15"
+                    android:textSize="25sp"
+                    android:gravity="center" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="●"
+                    android:textColor="#22C55E"
+                    android:textSize="25sp"
+                    android:gravity="center" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="●"
+                    android:textColor="#22D3EE"
+                    android:textSize="25sp"
+                    android:gravity="center" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="●"
+                    android:textColor="#A855F7"
+                    android:textSize="25sp"
+                    android:gravity="center" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/btnColorStudio"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:gravity="center"
+                android:text="＋ CUSTOMIZE PALETTE"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:background="@drawable/bg_mode_active"
+                android:layout_marginTop="14dp" />
+
+        </LinearLayout>
+
+        <!-- START AND STOP -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:layout_marginTop="26dp">
+
+            <TextView
+                android:id="@+id/btnStart"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="7dp"
+                android:gravity="center"
+                android:text="▶ START"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:background="@drawable/bg_start_button" />
+
+            <TextView
+                android:id="@+id/btnStop"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:layout_marginStart="7dp"
+                android:gravity="center"
+                android:text="■ STOP"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:background="@drawable/bg_stop_button" />
+
+        </LinearLayout>
+
+        <!-- FOOTER -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="FLOATING DJ VISUALIZER  •  PRO AUDIO EXPERIENCE • Powered by : Rifki Inc."
+            android:textColor="#64748B"
+            android:textSize="9sp"
+            android:gravity="center"
+            android:letterSpacing="0.08"
+            android:layout_marginTop="28dp"
+            android:layout_marginBottom="20dp" />
+
+    </LinearLayout>
+
+</ScrollView>
