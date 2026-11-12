@@ -12,7 +12,7 @@
   <p>
     <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android">
     <img src="https://img.shields.io/badge/Language-Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin">
-    <img src="https://img.shields.io/badge/Project-Floating%20DJ%20Visualizer-263238?style=for-the-badge" alt="Project">
+    <img src="https://img.shields.io/badge/Version-v2.3.3-2196F3?style=for-the-badge" alt="Version">
   </p>
 
   <p>
@@ -25,16 +25,16 @@
 
 ## 📸 Preview Aplikasi
 
-<!-- Menggunakan relative path dari folder dokumentasi -->
-<p align="center">
-  <img width="220" alt="Dokumentasi 1" src="dokumentasi/dokumentasi-1.jpg" />
-  &nbsp;&nbsp;
-  <img width="220" alt="Dokumentasi 2" src="dokumentasi/dokumentasi-2.jpg" />
-  &nbsp;&nbsp;
-  <img width="220" alt="Dokumentasi 3" src="dokumentasi/dokumentasi-3.jpg" />
-</p>
+<table align="center">
+  <tr>
+    <td align="center"><img src="dokumentasi/dokumentasi-1.jpg" width="180" alt="Preview 1" /></td>
+    <td align="center"><img src="dokumentasi/dokumentasi-2.jpg" width="180" alt="Preview 2" /></td>
+    <td align="center"><img src="dokumentasi/dokumentasi-3.jpg" width="180" alt="Preview 3" /></td>
+    <td align="center"><img src="dokumentasi/dokumentasi-4.jpg" width="180" alt="Preview 4" /></td>
+  </tr>
+</table>
 
-> *Lihat lebih banyak tangkapan layar di folder [dokumentasi/](dokumentasi/).*
+> *Lihat koleksi lengkap tangkapan layar lainnya di folder [dokumentasi/](dokumentasi/).*
 
 ---
 
@@ -42,7 +42,7 @@
 
 **Floating DJ Visualizer** adalah proyek aplikasi Android yang dikembangkan oleh **Rifki**. Aplikasi ini menghadirkan visualisasi audio dalam bentuk *floating overlay*, sehingga visualizer dapat tetap tampil di atas aplikasi lain.
 
-Proyek ini dikembangkan secara bertahap dari **V1 hingga Seterusnya**, dengan fokus pada fleksibilitas tampilan, sinkronisasi pengaturan, kestabilan, dan pengalaman penggunaan yang mulus.
+Proyek ini dikembangkan secara bertahap dari **V1 hingga seterusnya**, dengan fokus pada fleksibilitas tampilan, sinkronisasi pengaturan, kestabilan, dan pengalaman penggunaan yang mulus.
 
 ## ✨ Kelebihan Aplikasi (Key Features)
 
@@ -51,7 +51,7 @@ Proyek ini dikembangkan secara bertahap dari **V1 hingga Seterusnya**, dengan fo
 - **Bar Customization** — Pengaturan jumlah bar, *gap*, ketebalan, tinggi, dan tampilan visual.
 - **Color Studio** — Pengaturan warna melalui *color stop*, *color wheel*, nilai HEX/RGB, dan preset palet.
 - **Bar Appearance** — Pilihan gaya *Clean*, *Glossy*, *Neon*, dan *Frosted*.
-- **Glow Effect** — Intensitas efek *glow* dapat disesuaikan.
+- **Glow Effect** — Intensitas efek *glow* dapat disesuaikan dan tampil pada semua gaya visual.
 - **Floating Profile & Layers** — Pengelolaan beberapa profil/layer dengan konfigurasi masing-masing.
 - **Scene Manager** — Menyimpan dan mengelola konfigurasi visualizer sebagai *scene*.
 - **Import & Export** — Dukungan pertukaran konfigurasi yang tersedia di aplikasi.
@@ -76,7 +76,7 @@ Proyek ini dikembangkan secara bertahap dari **V1 hingga Seterusnya**, dengan fo
 ## 📱 Kompatibilitas (Compatibility)
 
 - Dirancang khusus untuk perangkat Android.
-- Minimum SDK dan Target SDK mengikuti konfigurasi rilis (Saat ini mendukung Android 15 & 16).
+- Minimum SDK dan Target SDK mengikuti konfigurasi rilis (Mendukung Android 15 & Android 16).
 - *Catatan: Performa dan dukungan audio (FFT/Visualizer) dapat berbeda tergantung spesifikasi perangkat keras dan implementasi vendor ROM/OS.*
 
 ---
@@ -84,6 +84,26 @@ Proyek ini dikembangkan secara bertahap dari **V1 hingga Seterusnya**, dengan fo
 ## 📝 Changelog
 
 > Catatan perubahan setiap versi akan ditambahkan secara bertahap.
+
+### 🔹 V2.3.3 — Overlay Stability Update
+
+#### 🇬🇧 English (EN)
+- **Centered & Locked Studio Dialogs:** Disabled dialog dragging completely; every studio dialog stays centered and can only be closed with its in-panel close control or action buttons.
+- **Touch & Window Stability:** Removed live dialog-window position mutation from touch handling to prevent accidental header gestures from destabilizing the app.
+- **Expanded Appearance Ranges:** Appearance Studio dimensions and controls now accept zero values (`0`) and broader bounded manual ranges (up to `4096 dp` for width/height); the renderer safely fits oversized requests to the active display.
+- **Safe Zero Bar Count:** A bar count of `0` is now safely handled by both FFT paths and displays no horizontal bars without division-by-zero errors.
+- **Universal Overlay Glow:** Floating bars now reserve transparent drawing margins for their glow, allowing glow intensity to render properly in the overlay for **all** appearance styles rather than only NEON.
+- **Core Audio Pipeline Preserved:** Primary `Visualizer(0)`, FFT smoothing, and the MediaProjection capture pipeline are fully preserved.
+
+#### 🇮🇩 Indonesia (ID)
+- **Dialog Studio Terkunci di Tengah:** Fitur geser (*dragging*) pada dialog dinonaktifkan sepenuhnya; setiap dialog studio kini tetap berada di tengah layar dan hanya dapat ditutup melalui tombol tutup atau tombol aksi di dalam panel.
+- **Stabilitas Sentuhan & Jendela:** Menghapus mutasi posisi jendela dialog secara langsung dari penanganan sentuhan (*touch handling*) untuk mencegah gestur tidak sengaja pada *header* mengganggu stabilitas aplikasi.
+- **Rentang Dimensi Lebih Luas:** Kontrol dan dimensi di *Appearance Studio* kini mendukung nilai nol (`0`) serta rentang input manual yang lebih luas (hingga `4096 dp` untuk lebar/tinggi); *renderer* secara otomatis menyesuaikan ukuran berlebih agar pas dengan layar aktif.
+- **Penanganan Aman Bar Nol (0):** Jumlah bar bernilai `0` kini ditangani dengan aman oleh kedua jalur FFT tanpa risiko *division-by-zero*, sehingga menyembunyikan bar horizontal dengan mulus.
+- **Efek Glow untuk Semua Gaya:** *Floating bar* kini menyediakan margin gambar transparan untuk efek *glow*, sehingga intensitas cahaya *glow* dapat tampil di overlay untuk **semua** gaya tampilan (*Clean*, *Glossy*, *Neon*, *Frosted*), bukan hanya pada gaya NEON.
+- **Pipeline Audio Utama Terjaga:** Jalur utama `Visualizer(0)`, penghalusan (*smoothing*) FFT, dan *pipeline* penangkapan audio MediaProjection tetap dipertahankan secara optimal.
+
+---
 
 ### 🔹 V2.2.3 — Android 16 Audio Response Update
 

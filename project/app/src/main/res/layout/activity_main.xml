@@ -65,13 +65,13 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/btnPositionSettings"
+                android:id="@+id/btnGeneralSettings"
                 android:layout_width="44dp"
                 android:layout_height="44dp"
                 android:layout_marginStart="8dp"
                 android:background="@drawable/bg_icon_button"
                 android:clickable="true"
-                android:contentDescription="Position and advanced settings"
+                android:contentDescription="General settings"
                 android:focusable="true"
                 android:gravity="center"
                 android:text="⚙"
@@ -152,7 +152,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Optional · tampilkan bar di atas aplikasi lain"
+                    android:text="Optional · show bar over other apps"
                     android:textColor="#9AA8BE"
                     android:textSize="10sp" />
             </LinearLayout>
@@ -378,32 +378,62 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
+                android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/btnModeVertical"
+                <HorizontalScrollView
                     android:layout_width="0dp"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_mode_inactive"
-                    android:gravity="center"
-                    android:text="VERTICAL · SINGLE"
-                    android:textColor="#FFFFFF"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
+                    android:clipToPadding="false"
+                    android:fadingEdgeLength="20dp"
+                    android:fillViewport="false"
+                    android:overScrollMode="never"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/btnModeVertical"
+                            android:layout_width="176dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_mode_inactive"
+                            android:gravity="center"
+                            android:text="VERTICAL · SINGLE"
+                            android:textColor="#FFFFFF"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/btnModeHorizontal"
+                            android:layout_width="176dp"
+                            android:layout_height="48dp"
+                            android:layout_marginStart="8dp"
+                            android:background="@drawable/bg_mode_active"
+                            android:gravity="center"
+                            android:text="HORIZONTAL · DJ"
+                            android:textColor="#FFFFFF"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </HorizontalScrollView>
 
                 <TextView
-                    android:id="@+id/btnModeHorizontal"
-                    android:layout_width="0dp"
+                    android:id="@+id/btnPositionSettings"
+                    android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_mode_active"
+                    android:background="@drawable/bg_icon_button"
+                    android:clickable="true"
+                    android:contentDescription="Floating position studio"
+                    android:focusable="true"
                     android:gravity="center"
-                    android:text="HORIZONTAL · DJ"
+                    android:text="⌖"
                     android:textColor="#FFFFFF"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
+                    android:textSize="23sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -470,13 +500,34 @@
             android:orientation="vertical"
             android:padding="17dp">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="BAR APPEARANCE"
-                android:textColor="#F7F8FF"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="BAR APPEARANCE"
+                    android:textColor="#F7F8FF"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnResetBarAppearance"
+                    android:layout_width="42dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_icon_button"
+                    android:clickable="true"
+                    android:contentDescription="Reset bar appearance values"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="↻"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp" />
+            </LinearLayout>
 
             <HorizontalScrollView
                 android:layout_width="match_parent"

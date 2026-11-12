@@ -104,6 +104,9 @@ class FloatingVisualizerService : Service() {
     private var windowView: FrameLayout? = null
     private var contentView: LinearLayout? = null
     private var overlayParams: WindowManager.LayoutParams? = null
+    // Preserve the visual center of the overlay when rotated bounds change.
+    private var overlayCenterXpx: Int? = null
+    private var overlayCenterYpx: Int? = null
     private val floatingBars = mutableListOf<View>()
     private var renderedVertical: Boolean? = null
 
@@ -384,13 +387,48 @@ class FloatingVisualizerService : Service() {
         setServiceActive(true)
     }
 
+    /** Notification copy follows the app's selected language; audio processing is unaffected. */
+    private fun localizedServiceText(source: String): String {
+        val language = getSharedPreferences("floating_dj_settings", MODE_PRIVATE)
+            .getString("app_language", "en")
+        if (language != "id") return source
+        val translations = listOf(
+            "Floating DJ Audio Engine" to "Mesin Audio Floating DJ",
+            "Floating DJ Visualizer" to "Visualizer Floating DJ",
+            "Real-time visualizer audio engine status" to "Status mesin visualizer audio real-time",
+            "Real-time Audio Spectrum" to "Spektrum Audio Real-Time",
+            "FLOATING ON" to "FLOATING AKTIF",
+            "FLOATING OFF" to "FLOATING NONAKTIF",
+            "Floating ON" to "Floating AKTIF",
+            "Floating OFF" to "Floating NONAKTIF",
+            "M.Proj ON" to "M.Proj AKTIF",
+            "M.Proj OFF" to "M.Proj NONAKTIF",
+            "PAUSE" to "JEDA",
+            "RESUME" to "LANJUT",
+            "START" to "MULAI",
+            "M.PROJ ON" to "M.PROJ AKTIF",
+            "M.PROJ OFF" to "M.PROJ NONAKTIF",
+            "System audio visualizer active" to "Visualizer audio sistem aktif",
+            "Optional MediaProjection audio backup active" to "Cadangan audio MediaProjection aktif",
+            "MediaProjection backup audio active" to "Audio cadangan MediaProjection aktif",
+            "Primary audio unavailable · backup ready" to "Audio utama tidak tersedia · cadangan siap",
+            "Audio paused · tap Resume to continue" to "Audio dijeda · ketuk Lanjutkan untuk meneruskan",
+            "System audio visualizer" to "Visualizer audio sistem",
+            "Audio paused" to "Audio dijeda",
+            "Audio active" to "Audio aktif"
+        )
+        var translated = source
+        translations.forEach { (english, indonesian) -> translated = translated.replace(english, indonesian) }
+        return translated
+    }
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= 26) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Floating DJ Audio Engine",
+                localizedServiceText("Floating DJ Audio Engine"),
                 NotificationManager.IMPORTANCE_LOW
-            ).apply { description = "Real-time visualizer audio engine status" }
+            ).apply { description = localizedServiceText("Real-time visualizer audio engine status") }
             (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
         }
     }
@@ -404,8 +442,8 @@ class FloatingVisualizerService : Service() {
             )
             setMetadata(
                 MediaMetadata.Builder()
-                    .putString(MediaMetadata.METADATA_KEY_TITLE, "Floating DJ Visualizer")
-                    .putString(MediaMetadata.METADATA_KEY_ARTIST, "Real-time Audio Spectrum")
+                    .putString(MediaMetadata.METADATA_KEY_TITLE, localizedServiceText("Floating DJ Visualizer"))
+                    .putString(MediaMetadata.METADATA_KEY_ARTIST, localizedServiceText("Real-time Audio Spectrum"))
                     .build()
             )
             setCallback(object : MediaSession.Callback() {
@@ -500,14 +538,14 @@ class FloatingVisualizerService : Service() {
 
     private fun createNotification(message: String): Notification {
         val audioActive = engineSource != EngineSource.NONE
-        val overlayLabel = if (floatingOverlayEnabled) "FLOATING ON" else "FLOATING OFF"
-        val audioLabel = when {
+        val overlayLabel = localizedServiceText(if (floatingOverlayEnabled) "FLOATING ON" else "FLOATING OFF")
+        val audioLabel = localizedServiceText(when {
             audioActive -> "PAUSE"
             audioPaused -> "RESUME"
             else -> "START"
-        }
+        })
         val backupActive = engineSource == EngineSource.PROJECTION
-        val backupLabel = if (backupActive) "M.PROJ ON" else "M.PROJ OFF"
+        val backupLabel = localizedServiceText(if (backupActive) "M.PROJ ON" else "M.PROJ OFF")
 
         updateMediaSessionState()
 
@@ -522,10 +560,10 @@ class FloatingVisualizerService : Service() {
         mediaSession?.sessionToken?.let { mediaStyle.setMediaSession(it) }
 
         return builder
-            .setContentTitle("Floating DJ Visualizer")
-            .setContentText(
+            .setContentTitle(localizedServiceText("Floating DJ Visualizer"))
+            .setContentText(localizedServiceText(
                 "$message · Floating ${if (floatingOverlayEnabled) "ON" else "OFF"} · M.Proj ${if (backupActive) "ON" else "OFF"}"
-            )
+            ))
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentIntent(openAppPendingIntent())
             .setCategory(Notification.CATEGORY_TRANSPORT)
@@ -554,6 +592,7 @@ class FloatingVisualizerService : Service() {
 
     private fun refreshNotification(message: String) {
         if (!foregroundStarted) return
+        createNotificationChannel()
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(NOTIFICATION_ID, createNotification(message))
     }
@@ -578,24 +617,30 @@ class FloatingVisualizerService : Service() {
 
     private fun readSettings(intent: Intent) {
         isVerticalMode = intent.getBooleanExtra(EXTRA_VERTICAL, isVerticalMode)
-        widthDp = intent.getIntExtra(EXTRA_WIDTH, widthDp).coerceIn(100, 1800)
-        heightDp = intent.getIntExtra(EXTRA_HEIGHT, heightDp).coerceIn(60, 1800)
-        barCount = intent.getIntExtra(EXTRA_BAR_COUNT, barCount).coerceIn(5, MAX_BAR_COUNT)
-        barWidthDp = intent.getIntExtra(EXTRA_BAR_WIDTH, barWidthDp).coerceIn(2, 140)
-        gapDp = intent.getIntExtra(EXTRA_GAP, gapDp).coerceIn(0, 50)
-        scalePercent = intent.getIntExtra(EXTRA_SCALE, scalePercent).coerceIn(40, 220)
-        opacityPercent = intent.getIntExtra(EXTRA_OPACITY, opacityPercent).coerceIn(5, 100)
+        widthDp = intent.getIntExtra(EXTRA_WIDTH, widthDp).coerceIn(0, 4096)
+        heightDp = intent.getIntExtra(EXTRA_HEIGHT, heightDp).coerceIn(0, 4096)
+        barCount = intent.getIntExtra(EXTRA_BAR_COUNT, barCount).coerceIn(0, MAX_BAR_COUNT)
+        barWidthDp = intent.getIntExtra(EXTRA_BAR_WIDTH, barWidthDp).coerceIn(0, 2048)
+        gapDp = intent.getIntExtra(EXTRA_GAP, gapDp).coerceIn(0, 512)
+        scalePercent = intent.getIntExtra(EXTRA_SCALE, scalePercent).coerceIn(0, 500)
+        opacityPercent = intent.getIntExtra(EXTRA_OPACITY, opacityPercent).coerceIn(0, 100)
         glowPercent = intent.getIntExtra(EXTRA_GLOW, glowPercent).coerceIn(0, 100)
         responsePercent = intent.getIntExtra(EXTRA_RESPONSE, responsePercent).coerceIn(0, 100)
-        cornerRadiusDp = intent.getIntExtra(EXTRA_CORNER_RADIUS, cornerRadiusDp).coerceIn(0, 50)
+        cornerRadiusDp = intent.getIntExtra(EXTRA_CORNER_RADIUS, cornerRadiusDp).coerceIn(0, 512)
         intent.getIntArrayExtra(EXTRA_COLORS)?.takeIf { it.size >= 2 }?.let { spectrumColors = it.copyOf() }
         effectStyle = intent.getStringExtra(EXTRA_EFFECT) ?: effectStyle
         floatingOverlayEnabled = intent.getBooleanExtra(EXTRA_FLOATING_ENABLED, floatingOverlayEnabled)
         singleAudioMode = intent.getStringExtra(EXTRA_SINGLE_MODE) ?: singleAudioMode
-        bassMinHz = intent.getIntExtra(EXTRA_BASS_MIN_HZ, bassMinHz).coerceIn(30, 300)
-        bassMaxHz = intent.getIntExtra(EXTRA_BASS_MAX_HZ, bassMaxHz).coerceIn(bassMinHz + 20, 600)
-        positionXdp = intent.getIntExtra(EXTRA_POSITION_X, positionXdp).coerceAtLeast(0)
-        positionYdp = intent.getIntExtra(EXTRA_POSITION_Y, positionYdp).coerceAtLeast(0)
+        bassMinHz = intent.getIntExtra(EXTRA_BASS_MIN_HZ, bassMinHz).coerceIn(0, 400)
+        bassMaxHz = intent.getIntExtra(EXTRA_BASS_MAX_HZ, bassMaxHz).coerceIn(0, 400)
+        val requestedPositionX = intent.getIntExtra(EXTRA_POSITION_X, positionXdp).coerceAtLeast(0)
+        val requestedPositionY = intent.getIntExtra(EXTRA_POSITION_Y, positionYdp).coerceAtLeast(0)
+        if (requestedPositionX != positionXdp || requestedPositionY != positionYdp) {
+            positionXdp = requestedPositionX
+            positionYdp = requestedPositionY
+            overlayCenterXpx = null
+            overlayCenterYpx = null
+        }
         positionMode = intent.getStringExtra(EXTRA_POSITION_MODE) ?: positionMode
         rotationDegrees = intent.getIntExtra(EXTRA_ROTATION, rotationDegrees).coerceIn(0, 359)
     }
@@ -722,9 +767,10 @@ class FloatingVisualizerService : Service() {
             return sqrt(real * real + imag * imag)
         }
 
-        for (band in 0 until barCount) {
-            val lowHz = 45.0 * (12000.0 / 45.0).pow(band.toDouble() / barCount)
-            val highHz = 45.0 * (12000.0 / 45.0).pow((band + 1).toDouble() / barCount)
+        val analysisBandCount = barCount.coerceAtLeast(1)
+        for (band in 0 until analysisBandCount) {
+            val lowHz = 45.0 * (12000.0 / 45.0).pow(band.toDouble() / analysisBandCount)
+            val highHz = 45.0 * (12000.0 / 45.0).pow((band + 1).toDouble() / analysisBandCount)
             val first = ((lowHz / nyquist) * binCount).toInt().coerceIn(1, binCount - 1)
             val last = (((highHz / nyquist) * binCount).toInt()).coerceIn(first + 1, binCount)
             var peak = 0.0
@@ -735,8 +781,14 @@ class FloatingVisualizerService : Service() {
             result[band] = smoothedLevels[band]
         }
 
-        val firstBass = ((bassMinHz / nyquist) * binCount).toInt().coerceIn(1, binCount - 1)
-        val lastBass = ((bassMaxHz / nyquist) * binCount).toInt().coerceIn(firstBass + 1, binCount)
+        val lowBassHz = min(bassMinHz, bassMaxHz)
+        val highBassHz = max(bassMinHz, bassMaxHz)
+        val firstBass = ((lowBassHz / nyquist) * binCount).toInt().coerceIn(1, binCount - 1)
+        val lastBass = if (lowBassHz == 0 && highBassHz == 0) {
+            binCount
+        } else {
+            ((highBassHz / nyquist) * binCount).toInt().coerceIn(firstBass + 1, binCount)
+        }
         var bassPeak = 0.0
         for (bin in firstBass until lastBass) bassPeak = max(bassPeak, magnitude(bin))
         val bassTarget = (bassPeak / 100.0).coerceIn(0.0, 1.0).pow(0.58).toFloat()
@@ -744,8 +796,8 @@ class FloatingVisualizerService : Service() {
         result[MAX_BAR_COUNT] = smoothedBass
 
         var power = 0f
-        for (band in 0 until barCount) power += smoothedLevels[band] * smoothedLevels[band]
-        val musicTarget = sqrt(power / barCount.toFloat()).coerceIn(0f, 1f)
+        for (band in 0 until analysisBandCount) power += smoothedLevels[band] * smoothedLevels[band]
+        val musicTarget = sqrt(power / analysisBandCount.toFloat()).coerceIn(0f, 1f)
         smoothedMusic = smooth(smoothedMusic, musicTarget, responseAttack(), responseRelease())
         result[MAX_BAR_COUNT + 1] = smoothedMusic
         return result
@@ -909,9 +961,10 @@ class FloatingVisualizerService : Service() {
         }
 
         val result = FloatArray(MAX_BAR_COUNT + 2)
-        for (band in 0 until barCount) {
-            val low = 45.0 * (12000.0 / 45.0).pow(band.toDouble() / barCount)
-            val high = 45.0 * (12000.0 / 45.0).pow((band + 1).toDouble() / barCount)
+        val analysisBandCount = barCount.coerceAtLeast(1)
+        for (band in 0 until analysisBandCount) {
+            val low = 45.0 * (12000.0 / 45.0).pow(band.toDouble() / analysisBandCount)
+            val high = 45.0 * (12000.0 / 45.0).pow((band + 1).toDouble() / analysisBandCount)
             val first = max(1, (low * FFT_SIZE / SAMPLE_RATE).toInt())
             val last = min(FFT_SIZE / 2, max(first + 1, (high * FFT_SIZE / SAMPLE_RATE).toInt()))
             var peak = 0.0
@@ -920,16 +973,22 @@ class FloatingVisualizerService : Service() {
             smoothedLevels[band] = smooth(smoothedLevels[band], target, responseAttack(), responseRelease())
             result[band] = smoothedLevels[band]
         }
-        val firstBass = max(1, (bassMinHz * FFT_SIZE / SAMPLE_RATE).toInt())
-        val lastBass = min(FFT_SIZE / 2, (bassMaxHz * FFT_SIZE / SAMPLE_RATE).toInt()).coerceAtLeast(firstBass)
+        val lowBassHz = min(bassMinHz, bassMaxHz)
+        val highBassHz = max(bassMinHz, bassMaxHz)
+        val firstBass = max(1, (lowBassHz * FFT_SIZE / SAMPLE_RATE).toInt())
+        val lastBass = if (lowBassHz == 0 && highBassHz == 0) {
+            FFT_SIZE / 2
+        } else {
+            min(FFT_SIZE / 2, max(firstBass, (highBassHz * FFT_SIZE / SAMPLE_RATE).toInt()))
+        }
         var bassPeak = 0.0
         for (bin in firstBass..lastBass) bassPeak = max(bassPeak, sqrt(real[bin] * real[bin] + imag[bin] * imag[bin]))
         val bassTarget = (bassPeak / FFT_SIZE * 12.0).coerceIn(0.0, 1.0).pow(0.60).toFloat()
         smoothedBass = smooth(smoothedBass, bassTarget, (responseAttack() + 0.04f).coerceAtMost(0.99f), responseRelease())
         result[MAX_BAR_COUNT] = smoothedBass
         var sum = 0f
-        for (band in 0 until barCount) sum += smoothedLevels[band] * smoothedLevels[band]
-        val musicTarget = sqrt(sum / barCount.toFloat()).coerceIn(0f, 1f)
+        for (band in 0 until analysisBandCount) sum += smoothedLevels[band] * smoothedLevels[band]
+        val musicTarget = sqrt(sum / analysisBandCount.toFloat()).coerceIn(0f, 1f)
         smoothedMusic = smooth(smoothedMusic, musicTarget, responseAttack(), responseRelease())
         result[MAX_BAR_COUNT + 1] = smoothedMusic
         return result
@@ -1050,6 +1109,8 @@ class FloatingVisualizerService : Service() {
         val density = resources.displayMetrics.density
         params.x = (positionXdp * density).toInt()
         params.y = (positionYdp * density).toInt()
+        overlayCenterXpx = params.x + boundW / 2
+        overlayCenterYpx = params.y + boundH / 2
 
         windowView = host
         contentView = content
@@ -1150,14 +1211,18 @@ class FloatingVisualizerService : Service() {
         val host = windowView ?: return
         val content = contentView ?: return
         val params = overlayParams ?: return
+        val oldWidth = params.width.coerceAtLeast(1)
+        val oldHeight = params.height.coerceAtLeast(1)
+        val density = resources.displayMetrics.density.coerceAtLeast(0.1f)
+        val centerX = overlayCenterXpx ?: ((positionXdp * density).toInt() + oldWidth / 2)
+        val centerY = overlayCenterYpx ?: ((positionYdp * density).toInt() + oldHeight / 2)
         val (contentW, contentH) = localContentSizePx()
         val (boundW, boundH) = rotatedBoundsPx(contentW, contentH)
         params.width = boundW
         params.height = boundH
-        val density = resources.displayMetrics.density.coerceAtLeast(0.1f)
-        // ACTION_UPDATE receives authoritative persisted coordinates from MainActivity.
-        params.x = (positionXdp * density).toInt()
-        params.y = (positionYdp * density).toInt()
+        // Keep the center fixed; only the outer bounds change when orientation or angle changes.
+        params.x = centerX - boundW / 2
+        params.y = centerY - boundH / 2
         content.rotation = rotationDegrees.toFloat()
         content.pivotX = contentW / 2f
         content.pivotY = contentH / 2f
@@ -1175,13 +1240,17 @@ class FloatingVisualizerService : Service() {
             } else 0
             val gapPx = min(requestedGap, maxGap)
             val totalGap = gapPx * (count - 1)
-            val available = (contentW - totalGap).coerceAtLeast(count * dp(1))
+            val requestedGlowPadding = if (glowPercent > 0) dp(8) else 0
+            val glowPadding = min(requestedGlowPadding, (contentW / (count * 6)).coerceAtLeast(0))
+            val available = (contentW - totalGap - 2 * glowPadding * count).coerceAtLeast(count * dp(1))
             val requested = dp(barWidthDp).coerceAtLeast(dp(1))
             val actualWidth = min(requested, available / count)
+            val childWidth = actualWidth + 2 * glowPadding
             for ((index, bar) in floatingBars.withIndex()) {
+                (bar as? EffectBarView)?.setGlowPaddingPx(glowPadding)
                 val left = if (index == 0) 0 else gapPx / 2
                 val right = if (index == count - 1) 0 else gapPx - gapPx / 2
-                bar.layoutParams = LinearLayout.LayoutParams(actualWidth, contentH).apply {
+                bar.layoutParams = LinearLayout.LayoutParams(childWidth, contentH).apply {
                     setMargins(left, 0, right, 0)
                 }
                 bar.invalidate()
@@ -1189,13 +1258,11 @@ class FloatingVisualizerService : Service() {
         }
 
         val (screenW, screenH) = displaySizePx()
-        val oldPositionX = positionXdp
-        val oldPositionY = positionYdp
         params.x = params.x.coerceIn(0, (screenW - boundW).coerceAtLeast(0))
         params.y = params.y.coerceIn(0, (screenH - boundH).coerceAtLeast(0))
-        positionXdp = (params.x / resources.displayMetrics.density).toInt()
-        positionYdp = (params.y / resources.displayMetrics.density).toInt()
-        if (positionXdp != oldPositionX || positionYdp != oldPositionY) savePosition()
+        overlayCenterXpx = params.x + boundW / 2
+        overlayCenterYpx = params.y + boundH / 2
+        // Do not round-trip px to dp here. Persist only explicit user drag/position changes.
         configureTouchMode(host, params)
         try { windowManager.updateViewLayout(host, params) }
         catch (e: Exception) { android.util.Log.e("FloatingDJ", "Overlay layout update failed", e) }
@@ -1235,6 +1302,8 @@ class FloatingVisualizerService : Service() {
                 params.y = params.y.coerceIn(0, (screenH - params.height).coerceAtLeast(0))
                 positionXdp = (params.x / resources.displayMetrics.density).toInt()
                 positionYdp = (params.y / resources.displayMetrics.density).toInt()
+                overlayCenterXpx = params.x + params.width / 2
+                overlayCenterYpx = params.y + params.height / 2
                 try { windowManager.updateViewLayout(host, params) } catch (_: Exception) {}
                 return true
             }
@@ -1247,6 +1316,12 @@ class FloatingVisualizerService : Service() {
     }
 
     private fun savePosition() {
+        overlayParams?.let { params ->
+            overlayCenterXpx = params.x + params.width / 2
+            overlayCenterYpx = params.y + params.height / 2
+            positionXdp = (params.x / resources.displayMetrics.density).toInt()
+            positionYdp = (params.y / resources.displayMetrics.density).toInt()
+        }
         getSharedPreferences("floating_dj_settings", MODE_PRIVATE).edit()
         .putInt("position_x", positionXdp)
         .putInt("position_y", positionYdp)
@@ -1277,9 +1352,9 @@ class FloatingVisualizerService : Service() {
             val spread = spreadLimit * layer / 4f
             val aura = RectF(
                 body.left - spread,
-                body.top - spread * 0.26f,
+                body.top - spread,
                 body.right + spread,
-                body.bottom + spread * 0.18f
+                body.bottom + spread
             )
             val layerStrength = 0.14f + (4 - layer) * 0.12f
             val alpha = (
@@ -1298,6 +1373,12 @@ class FloatingVisualizerService : Service() {
 
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         private var level = 0.03f
+        private var reservedGlowPaddingPx = 0
+
+        fun setGlowPaddingPx(value: Int) {
+            reservedGlowPaddingPx = value.coerceAtLeast(0)
+            invalidate()
+        }
 
         init {
             pivotY = 0f
@@ -1315,27 +1396,29 @@ class FloatingVisualizerService : Service() {
 
             if (height <= 0 || width <= 0 || spectrumColors.isEmpty()) return
 
-            val barHeight = height.toFloat() * level
+            val neonStrength = glowPercent.coerceIn(0, 100) / 100f
+            val glowPadding = reservedGlowPaddingPx.toFloat()
+                .coerceAtMost(width * 0.45f)
+                .coerceAtMost(height * 0.20f)
+            val innerHeight = (height.toFloat() - glowPadding * 2f).coerceAtLeast(1f)
+            val barHeight = innerHeight * level
             if (barHeight <= 0f) return
 
-            val top = height.toFloat() - barHeight
-            val rect = RectF(0f, top, width.toFloat(), height.toFloat())
+            val top = height.toFloat() - glowPadding - barHeight
+            val rect = RectF(glowPadding, top, width.toFloat() - glowPadding, height.toFloat() - glowPadding)
             val colorTop = spectrumColors[(index + 1) % spectrumColors.size]
             val colorBottom = spectrumColors[index % spectrumColors.size]
-            val radius = min(dp(cornerRadiusDp).toFloat(), width / 2f)
-            val neonStrength = if (effectStyle == "NEON") glowPercent.coerceIn(0, 100) / 100f else 0f
-            val glowInset = min(dp(12).toFloat() * neonStrength, width * 0.34f)
-            val auraBody = RectF(rect).apply { if (glowInset > 0f) inset(glowInset, 0f) }
+            val radius = min(dp(cornerRadiusDp).toFloat(), min(rect.width(), rect.height()) / 2f)
 
-            if (neonStrength > 0f) {
-                drawNeonAura(canvas, paint, auraBody, colorTop, neonStrength, glowInset, radius)
+            if (neonStrength > 0f && glowPadding > 0f) {
+                drawNeonAura(canvas, paint, rect, colorTop, neonStrength, glowPadding, radius)
             }
 
             paint.shader = LinearGradient(
                 0f,
-                height.toFloat(),
+                rect.bottom,
                 0f,
-                top,
+                rect.top,
                 colorBottom,
                 colorTop,
                 Shader.TileMode.CLAMP
@@ -1351,7 +1434,7 @@ class FloatingVisualizerService : Service() {
                 paint.color = if (effectStyle == "GLASS") {
                     0x66FFFFFF
                 } else {
-                    0x4DFFFFFF
+                    0x66FFFFFF
                 }
                 paint.alpha = opacityPercent * 255 / 100
 
@@ -1360,7 +1443,7 @@ class FloatingVisualizerService : Service() {
                     rect.left + rect.width() * 0.18f,
                     top + dp(2).toFloat(),
                     rect.left + rect.width() * 0.18f + highlightWidth,
-                    height.toFloat() - dp(2).toFloat(),
+                    rect.bottom - dp(2).toFloat(),
                     radius,
                     radius,
                     paint
@@ -1444,17 +1527,14 @@ class FloatingVisualizerService : Service() {
                     Shader.TileMode.CLAMP
                 )
 
-                val fillTop = height.toFloat() * (1f - level.coerceIn(0f, 1f))
-                val neonStrength = if (effectStyle == "NEON") glowPercent.coerceIn(0, 100) / 100f else 0f
-                val meterBody = RectF(0f, fillTop, width.toFloat(), height.toFloat())
-                val glowInset = min(dp(14).toFloat() * neonStrength, width * 0.38f)
-                val auraBody = RectF(meterBody).apply {
-                    if (glowInset > 0f) inset(glowInset, 0f)
-                }
-                if (neonStrength > 0f) {
-                    drawNeonAura(canvas, paint, auraBody, spectrumColors.first(), neonStrength, glowInset, radius)
-                    // The aura helper uses low-alpha paint for its light layers.
-                    // Restore both shader and body alpha so the single bar stays solid.
+                val neonStrength = glowPercent.coerceIn(0, 100) / 100f
+                val glowInset = if (neonStrength > 0f) min(dp(10).toFloat(), min(width * 0.10f, height * 0.10f)) else 0f
+                val fillHeight = (height.toFloat() - 2f * glowInset).coerceAtLeast(1f)
+                val fillTop = height.toFloat() - glowInset - fillHeight * level.coerceIn(0f, 1f)
+                val meterBody = RectF(glowInset, fillTop, width.toFloat() - glowInset, height.toFloat() - glowInset)
+                if (neonStrength > 0f && glowInset > 0f) {
+                    drawNeonAura(canvas, paint, meterBody, spectrumColors.first(), neonStrength, glowInset, radius)
+                    // Restore the gradient after painting the halo.
                     paint.shader = LinearGradient(
                         0f, height.toFloat(), 0f, 0f,
                         shaderColors, null, Shader.TileMode.CLAMP
@@ -1476,7 +1556,7 @@ class FloatingVisualizerService : Service() {
                     paint.color = if (effectStyle == "GLASS") {
                         0x77FFFFFF
                     } else {
-                        0x55FFFFFF
+                        0x70FFFFFF
                     }
                     paint.alpha = alpha
 
@@ -1528,15 +1608,12 @@ class FloatingVisualizerService : Service() {
                 index.toFloat() * gap
                 val bottom = top + segmentHeight
                 val segmentRadius = min(radius, segmentHeight / 2f)
-                val neonStrength = if (effectStyle == "NEON" && active) glowPercent.coerceIn(0, 100) / 100f else 0f
-                val segmentBody = RectF(0f, top, width.toFloat(), bottom)
-                val glowInset = min(dp(12).toFloat() * neonStrength, width * 0.36f)
-                val auraBody = RectF(segmentBody).apply {
-                    if (glowInset > 0f) inset(glowInset, 0f)
-                }
+                val neonStrength = if (active) glowPercent.coerceIn(0, 100) / 100f else 0f
+                val glowInset = if (neonStrength > 0f) min(dp(8).toFloat(), width * 0.12f) else 0f
+                val segmentBody = RectF(glowInset, top, width.toFloat() - glowInset, bottom)
 
-                if (neonStrength > 0f) {
-                    drawNeonAura(canvas, paint, auraBody, color, neonStrength, glowInset, segmentRadius)
+                if (neonStrength > 0f && glowInset > 0f) {
+                    drawNeonAura(canvas, paint, segmentBody, color, neonStrength, glowInset, segmentRadius)
                 }
 
                 paint.color = if (active) {
@@ -1570,7 +1647,7 @@ class FloatingVisualizerService : Service() {
                     paint.color = if (effectStyle == "GLASS") {
                         0x66FFFFFF
                     } else {
-                        0x44FFFFFF
+                        0x60FFFFFF
                     }
                     paint.alpha = alpha
 
@@ -1654,6 +1731,8 @@ class FloatingVisualizerService : Service() {
         windowView = null
         contentView = null
         overlayParams = null
+        overlayCenterXpx = null
+        overlayCenterYpx = null
         floatingBars.clear()
         renderedVertical = null
     }

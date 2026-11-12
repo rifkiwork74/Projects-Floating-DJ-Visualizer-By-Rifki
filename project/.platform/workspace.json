@@ -2,8 +2,8 @@
   "version": 1,
   "projects": [
     {
-      "id": "Floating DJ Visualizer",
-      "name": "Floating DJ Visualizer 2.2.3 · Android 16 Audio Response",
+      "id": "Floating DJ Visualizer 2.3.2",
+      "name": "Floating DJ Visualizer 2.3.3 · Studio Experience Update",
       "root": "",
       "buildSystem": "native",
       "settings": {},
