@@ -1,0 +1,93 @@
+{
+  "format": "com.floatingdj.floating-scene",
+  "schema_version": 1,
+  "name": "Scene 2 • Ini preset Scene 2 Ku - Coba y",
+  "selected_profile_id": "root",
+  "floating_overlay_requested": false,
+  "layers": [
+    {
+      "id": "root",
+      "name": "Default",
+      "default": true,
+      "colors": [
+        "#00FF00",
+        "#34FF00",
+        "#FFF96F",
+        "#FFFE00",
+        "#FF2A00"
+      ],
+      "effect": "NEON",
+      "width": 320,
+      "height": 332,
+      "bar_count": 15,
+      "bar_width": 18,
+      "bar_gap": 10,
+      "scale": 95,
+      "opacity": 100,
+      "shadow_opacity": 100,
+      "glow": 100,
+      "response_speed": 41,
+      "corner_radius": 0,
+      "vertical_mode": true,
+      "single_audio_mode": "DJ",
+      "bass_min_hz": 31,
+      "bass_max_hz": 61,
+      "horizontal_alignment": "LEFT",
+      "mirror_mode": "OFF",
+      "position_x": 0,
+      "position_y": 72,
+      "position_mode": "STATIC",
+      "rotation_degrees": 90,
+      "visible": true,
+      "effect_glow_values": {
+        "CLEAN": 0,
+        "GLOSSY": 35,
+        "NEON": 100,
+        "GLASS": 62
+      }
+    },
+    {
+      "id": "layer_dcc57108",
+      "name": "Profile 2",
+      "default": false,
+      "colors": [
+        "#00FF00",
+        "#34FF00",
+        "#FFF96F",
+        "#FFFE00",
+        "#FF2A00"
+      ],
+      "effect": "NEON",
+      "width": 320,
+      "height": 332,
+      "bar_count": 15,
+      "bar_width": 5,
+      "bar_gap": 10,
+      "scale": 95,
+      "opacity": 100,
+      "shadow_opacity": 100,
+      "glow": 95,
+      "response_speed": 41,
+      "corner_radius": 0,
+      "vertical_mode": true,
+      "single_audio_mode": "DJ",
+      "bass_min_hz": 31,
+      "bass_max_hz": 61,
+      "horizontal_alignment": "LEFT",
+      "mirror_mode": "OFF",
+      "position_x": 0,
+      "position_y": 126,
+      "position_mode": "STATIC",
+      "rotation_degrees": 90,
+      "visible": true,
+      "effect_glow_values": {
+        "CLEAN": 0,
+        "GLOSSY": 35,
+        "NEON": 95,
+        "GLASS": 24
+      }
+    }
+  ],
+  "updated_at": 1794424369553,
+  "id": "scene_cac3a0b7-d"
+}

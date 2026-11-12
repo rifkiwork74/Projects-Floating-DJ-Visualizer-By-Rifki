@@ -1,11 +1,11 @@
 {
   "format": 1,
   "kind": "project",
-  "name": "Floating DJ Visualizer 2.3.3 · Studio Experience Update",
-  "description": "",
-  "author": "Floating DJ Projects V 2.3.3",
+  "name": "Floating DJ Visualizer 2.4.32 · Frosted Glass Scroll Rails",
+  "description": "This version the Finally in V 2.0",
+  "author": "Floating DJ Projects V 2.4.32",
   "createdBy": "CodeAssist",
-  "exportedAt": 1794422463118,
+  "exportedAt": 1794422981232,
   "isAndroid": true,
   "packageName": "com.floatingdj.visualizer",
   "moduleCount": 1,
@@ -17,12 +17,12 @@
       "name": "app",
       "path": "app",
       "type": "android-app",
-      "files": 26,
-      "size": 315508
+      "files": 35,
+      "size": 736755
     }
   ],
-  "fileCount": 31,
-  "uncompressedSize": 317504,
+  "fileCount": 40,
+  "uncompressedSize": 738478,
   "hasBundledDeps": true,
   "iconEntry": null,
   "store": null

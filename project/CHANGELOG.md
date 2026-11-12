@@ -1,9 +1,7 @@
-# Floating DJ Visualizer 2.3.3 — Overlay Stability Update
-
-- Disabled dialog dragging completely; every studio dialog stays centered and can only be closed with its in-panel close control or action buttons.
-- Removed live dialog-window position mutation from touch handling to prevent accidental header gestures from destabilizing the app.
-- Appearance Studio dimensions and controls now accept zero values and broader bounded manual ranges (up to 4096 dp for width/height); the renderer safely fits oversized requests to the active display.
-- A bar count of zero is now handled safely by both FFT paths and displays no horizontal bars without division-by-zero.
-- Floating bars now reserve transparent drawing margins for their glow, and the glow intensity renders in the overlay for all appearance styles rather than only NEON.
-- Primary Visualizer(0), FFT smoothing, and MediaProjection capture pipeline are preserved.
+## v2.4.32
+- Restore the complete v2.4.30 Display/Choreographer preview scheduling and live interpolation; remove the v2.4.31 preview pausing, 30 FPS pacing, and parent-only invalidation changes that could leave the Display preview visually frozen.
+- Reduce only the in-app Display preview glow: replace its three-pass halo with one smaller, lower-alpha pass and remove redundant glow passes from live/held peak markers.
+- Keep the full Floating Service glow renderer, FFT delivery, 20 Hz–20 kHz mapping, frame-synchronised animation, Single/Horizontal geometry, and overlay position/rotation logic from v2.4.30 unchanged.
+- Keep Display and Floating renderers running simultaneously; no scroll-triggered pause or lower Display frame cap is introduced.
+- Bumped version to 2.4.32 / versionCode 61.
 

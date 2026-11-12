@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="tag_original_text_size" type="id" />
+    <item name="tag_selector_selected" type="id" />
+    <item name="tag_scroll_indicator" type="id" />
+    <item name="tag_main_scroll_indicator" type="id" />
+    <item name="tag_scroll_edge_glass" type="id" />
 </resources>
