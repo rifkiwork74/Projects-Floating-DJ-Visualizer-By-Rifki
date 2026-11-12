@@ -1,3 +1,7 @@
+<img width="720" height="1650" alt="Screenshot_2026-11-12-12-58-44-288_com xunijun app gp" src="https://github.com/user-attachments/assets/08a2cf89-55e6-466c-bfaf-faf563d2969b" />
+<img width="720" height="1650" alt="Screenshot_2026-11-12-12-59-05-333_com xunijun app gp" src="https://github.com/user-attachments/assets/358e0921-77a4-483c-87ea-c3dc7f7dce15" />
+
+
 # 🎧 Floating DJ Visualizer
 
 ### Projects Floating DJ Visualizer By Rifki
@@ -14,7 +18,9 @@
   <b>Visualisasi audio Android dengan floating overlay, kustomisasi mendalam, dan kontrol visual yang fleksibel.</b>
 </p>
 
+
 ---
+
 
 ## 📖 Tentang Proyek
 
@@ -37,6 +43,8 @@ Proyek ini dikembangkan secara bertahap dari **V1 hingga V2.4.32**, dengan fokus
 
 > Ketersediaan fitur dapat berbeda pada setiap versi. Periksa changelog untuk mengetahui fitur yang tersedia pada rilis tertentu.
 
+
+
 ## 🛠️ Teknologi
 
 | Komponen | Teknologi |
@@ -47,11 +55,15 @@ Proyek ini dikembangkan secara bertahap dari **V1 hingga V2.4.32**, dengan fokus
 | Audio Visualization | Android `Visualizer` API |
 | Build System | Gradle / Android Build Tools |
 
+
+
 ## 📱 Kompatibilitas
 
 - Dirancang untuk perangkat Android.
 - Minimum SDK dan Target SDK mengikuti konfigurasi masing-masing rilis.
 - Performa dan dukungan audio dapat berbeda tergantung perangkat, versi Android, dan implementasi vendor.
+
+
 
 ## 🚀 Riwayat Pengembangan
 
