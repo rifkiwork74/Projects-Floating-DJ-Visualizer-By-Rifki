@@ -25,52 +25,59 @@
 
 ## 📸 Preview Aplikasi
 
+<!-- Menggunakan relative path dari folder dokumentasi -->
 <p align="center">
-  <img width="250" alt="Screenshot_2026-11-12-12-58-44-288_com xunijun app gp" src="https://github.com/user-attachments/assets/08a2cf89-55e6-466c-bfaf-faf563d2969b" />
+  <img width="220" alt="Dokumentasi 1" src="dokumentasi/dokumentasi-1.jpg" />
   &nbsp;&nbsp;
-  <img width="250" alt="Screenshot_2026-11-12-12-59-05-333_com xunijun app gp" src="https://github.com/user-attachments/assets/358e0921-77a4-483c-87ea-c3dc7f7dce15" />
+  <img width="220" alt="Dokumentasi 2" src="dokumentasi/dokumentasi-2.jpg" />
+  &nbsp;&nbsp;
+  <img width="220" alt="Dokumentasi 3" src="dokumentasi/dokumentasi-3.jpg" />
 </p>
+
+> *Lihat lebih banyak tangkapan layar di folder [dokumentasi/](dokumentasi/).*
 
 ---
 
-## 📖 Tentang Proyek
+## 📖 Tentang Proyek (About the Project)
 
-**Floating DJ Visualizer** adalah proyek aplikasi Android yang dikembangkan oleh **Rifki**. 
+**Floating DJ Visualizer** adalah proyek aplikasi Android yang dikembangkan oleh **Rifki**. Aplikasi ini menghadirkan visualisasi audio dalam bentuk *floating overlay*, sehingga visualizer dapat tetap tampil di atas aplikasi lain.
 
-Aplikasi ini menghadirkan visualisasi audio dalam bentuk *floating overlay*, sehingga visualizer dapat tetap tampil di atas aplikasi lain. Proyek ini dikembangkan secara bertahap dari **V1 hingga V2.4.32**, dengan fokus pada fleksibilitas tampilan, sinkronisasi pengaturan, kestabilan, dan pengalaman penggunaan.
+Proyek ini dikembangkan secara bertahap dari **V1 hingga Seterusnya**, dengan fokus pada fleksibilitas tampilan, sinkronisasi pengaturan, kestabilan, dan pengalaman penggunaan yang mulus.
 
-## ✨ Kelebihan Aplikasi
+## ✨ Kelebihan Aplikasi (Key Features)
 
 - **Floating Overlay** — Visualizer dapat tampil di atas aplikasi lain dan dipindahkan ke berbagai posisi layar.
-- **Visualizer Modes** — Mendukung mode Single dan Horizontal / DJ.
-- **Bar Customization** — Pengaturan jumlah bar, gap, ketebalan, tinggi, dan tampilan visual.
-- **Color Palette** — Kustomisasi warna menggunakan nilai HEX dan RGB.
-- **Live Preview** — Pratinjau visual untuk melihat perubahan pengaturan secara langsung.
+- **Mode Visualizer** — Mendukung mode Single dan Horizontal/DJ.
+- **Bar Customization** — Pengaturan jumlah bar, *gap*, ketebalan, tinggi, dan tampilan visual.
+- **Color Studio** — Pengaturan warna melalui *color stop*, *color wheel*, nilai HEX/RGB, dan preset palet.
+- **Bar Appearance** — Pilihan gaya *Clean*, *Glossy*, *Neon*, dan *Frosted*.
+- **Glow Effect** — Intensitas efek *glow* dapat disesuaikan.
+- **Floating Profile & Layers** — Pengelolaan beberapa profil/layer dengan konfigurasi masing-masing.
+- **Scene Manager** — Menyimpan dan mengelola konfigurasi visualizer sebagai *scene*.
+- **Import & Export** — Dukungan pertukaran konfigurasi yang tersedia di aplikasi.
+- **Live Preview** — Pratinjau visual untuk melihat perubahan pengaturan.
+- **UI Themes** — Pilihan tampilan *Glossy*, *Custom*, *System*, *Dark*, dan *Light*.
 - **Position Control** — Pengaturan posisi *floating* secara horizontal maupun vertikal.
-- **Visual Effects** — Berbagai efek tampilan untuk mempercantik visualizer.
-- **Profile Management** — Pengaturan profil visualizer yang fleksibel.
 
-> Ketersediaan fitur dapat berbeda pada setiap versi. Periksa *changelog* untuk mengetahui fitur yang tersedia pada rilis tertentu.
+> **Catatan / Note:**  
+> Ketersediaan fitur dapat berbeda pada setiap versi. Periksa *changelog* untuk mengetahui fitur yang tersedia pada rilis tertentu.  
+> *(Feature availability may vary by version. Check the changelog to see which features are available in a specific release.)*
 
-## 🛠️ Teknologi
+## 🛠️ Teknologi (Tech Stack)
 
 | Komponen | Teknologi |
 |---|---|
 | **Platform** | Android |
 | **Bahasa Utama** | Kotlin |
 | **UI** | Android Views |
-| **Audio Visualization** | Android `Visualizer` API |
+| **Audio Visualization** | Android `Visualizer` API & MediaProjection FFT |
 | **Build System** | Gradle / Android Build Tools |
 
-## 📱 Kompatibilitas
+## 📱 Kompatibilitas (Compatibility)
 
-- Dirancang untuk perangkat Android.
-- Minimum SDK dan Target SDK mengikuti konfigurasi masing-masing rilis.
-- Performa dan dukungan audio dapat berbeda tergantung spesifikasi perangkat, versi Android, dan implementasi vendor ROM.
-
-## 🚀 Riwayat Pengembangan
-
-Pengembangan Floating DJ Visualizer dimulai dari **V1**, kemudian berkembang melalui beberapa tahap pembaruan hingga **V2.4.32**. Setiap versi membawa pengembangan dan penyempurnaan tersendiri.
+- Dirancang khusus untuk perangkat Android.
+- Minimum SDK dan Target SDK mengikuti konfigurasi rilis (Saat ini mendukung Android 15 & 16).
+- *Catatan: Performa dan dukungan audio (FFT/Visualizer) dapat berbeda tergantung spesifikasi perangkat keras dan implementasi vendor ROM/OS.*
 
 ---
 
@@ -78,24 +85,58 @@ Pengembangan Floating DJ Visualizer dimulai dari **V1**, kemudian berkembang mel
 
 > Catatan perubahan setiap versi akan ditambahkan secara bertahap.
 
-### 🔹 V1.x
+### 🔹 V2.2.3 — Android 16 Audio Response Update
 
-- Visualizer dapat tampil di atas aplikasi lain dan dipindahkan ke berbagai posisi layar.
-- Mendukung mode Single dan Horizontal/DJ.
-- Pengaturan warna melalui nilai warna HEX/RGB.
-- Pengaturan jumlah bar, gap, ketebalan, tinggi, dan tampilan visual.
-- Pratinjau visual untuk melihat perubahan pengaturan.
-- Pengaturan posisi *floating* secara horizontal maupun vertikal.
+#### 🇬🇧 English (EN)
+- **Color Picker Overhaul:** Replaced the two-target hue ring + inner globe picker with one circular HSV disk and one draggable knob. Knob angle selects Hue and knob radius selects Saturation; the Brightness slider remains independent.
+- **Scroll Optimization:** Color-wheel drag now disallows parent ScrollView interception while the pointer is down, resolving scrolling conflicts. 
+- **UI Improvements:** Bar Appearance numeric fields use fixed-width, centered value boxes. Slider knobs are larger (24dp) and accent-tinted for better accessibility.
+- **Response Speed (0–100%):** Added fine-tuned animation controls. 0 is smoother/softer; 100 is faster attack/release. Synchronized with both primary Visualizer and MediaProjection FFT paths.
+- **FFT Accuracy:** Kept actual device-reported FFT ranges instead of adding fake 1024/2048/4096 choices to ensure true Android Visualizer compatibility.
+- **Neon Styling:** NEON effect now separates an aura from the opaque bar body. The body remains filled, while four low-cost translucent rounded layers create brighter edge light without heavy blur masks.
+- **Control & Notifications:** Start/Stop is now one full-width stateful control. Notification uses the native Android MediaStyle template with three stateful controls, complying with Android 13+ MediaStyle exemptions.
+- **Profile Persistence:** Color profiles now save and load your custom Response Speed settings.
+
+#### 🇮🇩 Indonesia (ID)
+- **Perombakan Color Picker:** Mengganti cincin rona dua target dengan satu disk HSV melingkar dan satu *knob* yang dapat digeser. Sudut *knob* mengatur Hue (Warna) dan radius mengatur Saturation (Saturasi); *slider* Kecerahan tetap terpisah.
+- **Optimasi Scroll:** Menyeret roda warna kini menonaktifkan gangguan gulir pada ScrollView utama, sehingga tidak bentrok saat memilih warna.
+- **Peningkatan UI:** Kolom angka Bar Appearance kini menggunakan lebar tetap dan rata tengah. *Knob slider* diperbesar (24dp) dengan warna aksen agar lebih mudah dikontrol.
+- **Kecepatan Respons (0-100%):** Menambahkan kontrol animasi. 0 untuk gerakan halus/lembut; 100 untuk respons cepat. Tersinkronisasi dengan jalur Visualizer utama dan MediaProjection FFT.
+- **Akurasi FFT:** Mempertahankan rentang FFT asli bawaan perangkat daripada menambahkan opsi palsu (1024/2048/4096) demi kompatibilitas penuh.
+- **Gaya Neon:** Efek NEON kini memisahkan aura dari tubuh bar. Bar tetap solid, sementara empat lapisan melengkung transparan menciptakan cahaya tepi tanpa membebani GPU dengan filter blur yang berat.
+- **Kontrol & Notifikasi:** Tombol Start/Stop digabung menjadi satu kontrol penuh. Notifikasi kini menggunakan *template* Android MediaStyle bawaan dengan tiga kontrol, sesuai dengan standar Android 13+.
+- **Penyimpanan Profil:** Profil warna sekarang akan menyimpan dan memuat pengaturan Kecepatan Respons (*Response Speed*) Anda.
+
+---
+
+### 🔹 V1.x — Initial Release
+
+#### 🇬🇧 English (EN)
+- **Floating Overlay:** Visualizer can appear over other apps and be moved freely across the screen.
+- **Visualizer Modes:** Support for Single and Horizontal/DJ modes.
+- **Color Settings:** Customization using HEX and RGB color values.
+- **Bar Customization:** Adjustable bar count, gap, thickness, height, and visual styles.
+- **Live Preview:** Real-time visual preview for adjusting settings.
+- **Position Control:** Precision adjustments for horizontal (X) and vertical (Y) floating positions.
+
+#### 🇮🇩 Indonesia (ID)
+- **Floating Overlay:** Visualizer dapat tampil di atas aplikasi lain dan dipindahkan ke berbagai posisi layar.
+- **Mode Visualizer:** Mendukung mode Single dan Horizontal/DJ.
+- **Pengaturan Warna:** Kustomisasi warna melalui nilai HEX dan RGB.
+- **Kustomisasi Bar:** Pengaturan jumlah bar, *gap*, ketebalan, tinggi, dan tampilan visual.
+- **Pratinjau Langsung:** Pratinjau visual secara *real-time* untuk melihat perubahan pengaturan.
+- **Kontrol Posisi:** Pengaturan posisi *floating* secara horizontal maupun vertikal.
+
+---
 
 ### 🔹 Future Updates
-
-- Changelog pembaruan berikutnya akan ditambahkan di sini.
+- *Changelog untuk pembaruan berikutnya akan ditambahkan di sini. / Future update logs will be added here.*
 
 ---
 
 ## 📬 Contact & Collaboration
 
-Punya pertanyaan, masukan, ide pengembangan, atau tertarik untuk berkolaborasi? Silakan hubungi saya melalui email:
+Punya pertanyaan, masukan, ide pengembangan, atau tertarik untuk berkolaborasi? / *Have questions, feedback, or want to collaborate?*
 
 <p align="center">
   <a href="mailto:rifki.work74@outlook.com">

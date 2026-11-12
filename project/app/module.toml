@@ -52,9 +52,9 @@ compileSdk = 36
 minSdk = 26
 targetSdk = 36
 manifest = "src/main/AndroidManifest.xml"
-versionCode = 1
-versionName = "1.1"
+versionCode = 7
+versionName = "2.2.3-android16-audio-response"
 isApplication = true
 manifestPlaceholders = []
 buildConfigFields = []
-buildTypes = [{ name = "debug", debuggable = true, minifyEnabled = false, shrinkResources = false }, { name = "release", debuggable = false, minifyEnabled = false, shrinkResources = false, proguardFiles = ["proguard-android-optimize.txt", "proguard-rules.pro"] }]
+buildTypes = [{ name = "debug", debuggable = true, minifyEnabled = false, shrinkResources = false, signingConfig = "floating-dj-sign-by-rifki" }, { name = "release", debuggable = false, minifyEnabled = false, shrinkResources = false, proguardFiles = ["proguard-android-optimize.txt", "proguard-rules.pro"], signingConfig = "floating-dj-sign-by-rifki" }]

@@ -1,11 +1,11 @@
 {
   "format": 1,
   "kind": "project",
-  "name": "Floating DJ Visualizer 1.0",
+  "name": "Floating DJ Visualizer 2.2.3 · Android 16 Audio Response",
   "description": "",
-  "author": "by Rifki V1. 0",
+  "author": "Floating DJ Projects V 2.2.3",
   "createdBy": "CodeAssist",
-  "exportedAt": 1794147860450,
+  "exportedAt": 1794421913120,
   "isAndroid": true,
   "packageName": "com.floatingdj.visualizer",
   "moduleCount": 1,
@@ -17,12 +17,12 @@
       "name": "app",
       "path": "app",
       "type": "android-app",
-      "files": 22,
-      "size": 107034
+      "files": 25,
+      "size": 235761
     }
   ],
-  "fileCount": 26,
-  "uncompressedSize": 108510,
+  "fileCount": 31,
+  "uncompressedSize": 245340,
   "hasBundledDeps": true,
   "iconEntry": null,
   "store": null
