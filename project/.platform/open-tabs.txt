@@ -1,2 +1,5 @@
 #v2
 0
+/storage/emulated/0/Android/data/com.tyron.code/files/codeassist/projects/project/app/src/main/res/values/strings.xml	0	0	text
+/storage/emulated/0/Android/data/com.tyron.code/files/codeassist/projects/project/app/src/main/res/values/ids.xml	0	0	text
+/storage/emulated/0/Android/data/com.tyron.code/files/codeassist/projects/project/app/src/main/AndroidManifest.xml	936	0	text

@@ -19,6 +19,22 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.App">
 
+        <service
+            android:name=".eq.service.EqEngineService"
+            android:enabled="true"
+            android:exported="false"
+            android:stopWithTask="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-enabled audio effect control and status for the experimental output-mix equalizer." />
+        </service>
+
+        <activity
+            android:name=".EqualizerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

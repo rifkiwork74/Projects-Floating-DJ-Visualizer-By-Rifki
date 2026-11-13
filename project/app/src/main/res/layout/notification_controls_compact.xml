@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:ellipsize="end"
         android:maxLines="1"
-        android:text="Floating OFF · Resume · M.Proj OFF"
+        android:text="Floating OFF · Start Visualizer · EQ OFF · M.Proj OFF"
         android:textColor="#202124"
         android:textSize="12sp"
         android:textStyle="bold" />

@@ -1,11 +1,11 @@
 {
   "format": 1,
   "kind": "project",
-  "name": "Floating DJ Visualizer 2.4.32 · Frosted Glass Scroll Rails",
-  "description": "This version the Finally in V 2.0",
-  "author": "Floating DJ Projects V 2.4.32",
+  "name": "Floating DJ Visualizer 3.0.9 · Implementasi Equalizer Engine",
+  "description": "Ini adalah hasil Implementasi ku dan update ke Version 3 cuii",
+  "author": "Floating DJ Projects V 3.0.9 • Implementasi EQ Engine",
   "createdBy": "CodeAssist",
-  "exportedAt": 1794422981232,
+  "exportedAt": 1794589528436,
   "isAndroid": true,
   "packageName": "com.floatingdj.visualizer",
   "moduleCount": 1,
@@ -17,12 +17,12 @@
       "name": "app",
       "path": "app",
       "type": "android-app",
-      "files": 35,
-      "size": 736755
+      "files": 45,
+      "size": 896126
     }
   ],
-  "fileCount": 40,
-  "uncompressedSize": 738478,
+  "fileCount": 51,
+  "uncompressedSize": 954355,
   "hasBundledDeps": true,
   "iconEntry": null,
   "store": null

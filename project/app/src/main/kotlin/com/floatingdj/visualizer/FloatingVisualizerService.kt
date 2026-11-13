@@ -38,6 +38,7 @@ import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.RemoteViews
+import com.floatingdj.visualizer.eq.service.EqEngineService
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -66,6 +67,7 @@ class FloatingVisualizerService : Service() {
         const val ACTION_ENGINE_STATUS = "com.floatingdj.visualizer.ENGINE_STATUS"
         const val ACTION_NOTIFICATION_TOGGLE_OVERLAY = "com.floatingdj.visualizer.NOTIFICATION_TOGGLE_OVERLAY"
         const val ACTION_NOTIFICATION_TOGGLE_AUDIO = "com.floatingdj.visualizer.NOTIFICATION_TOGGLE_AUDIO"
+        const val ACTION_NOTIFICATION_TOGGLE_EQ = "com.floatingdj.visualizer.NOTIFICATION_TOGGLE_EQ"
         const val ACTION_SET_OVERLAY_SUPPRESSED = "com.floatingdj.visualizer.SET_OVERLAY_SUPPRESSED"
 
         const val EXTRA_LEVELS = "extra_levels"
@@ -336,6 +338,10 @@ class FloatingVisualizerService : Service() {
                 handleNotificationAudioToggle()
                 return START_STICKY
             }
+            ACTION_NOTIFICATION_TOGGLE_EQ -> {
+                handleNotificationEqToggle()
+                return START_STICKY
+            }
             ACTION_REFRESH_NOTIFICATION -> {
                 if (foregroundStarted) {
                     val message = when (engineSource) {
@@ -360,7 +366,7 @@ class FloatingVisualizerService : Service() {
                         } else if (audioPaused) {
                             updateFloatingWindow()
                             broadcastStatus("AUDIO_PAUSED: Audio session is paused")
-                            refreshNotification("Audio paused · tap Resume to continue")
+                            refreshNotification("Audio paused · tap Start Visualizer to continue")
                             return START_STICKY
                         } else {
                             // Primary Visualizer may be unavailable on this device.
@@ -523,6 +529,11 @@ class FloatingVisualizerService : Service() {
             "Floating" to "Floating",
             "Pause" to "Jeda",
             "Resume" to "Lanjutkan",
+            "Start Visualizer" to "Mulai Visualizer",
+            "Stop Visualizer" to "Hentikan Visualizer",
+            "EQ Engine" to "Mesin EQ",
+            "EQ ON" to "EQ AKTIF",
+            "EQ OFF" to "EQ NONAKTIF",
             "M.Proj" to "M.Proj",
             "Floating ON" to "Floating AKTIF",
             "Floating OFF" to "Floating NONAKTIF",
@@ -537,7 +548,7 @@ class FloatingVisualizerService : Service() {
             "Optional MediaProjection audio backup active" to "Cadangan audio MediaProjection aktif",
             "MediaProjection backup audio active" to "Audio cadangan MediaProjection aktif",
             "Primary audio unavailable · backup ready" to "Audio utama tidak tersedia · cadangan siap",
-            "Audio paused · tap Resume to continue" to "Audio dijeda · ketuk Lanjutkan untuk meneruskan",
+            "tap Mulai Visualizer to continue" to "ketuk Mulai Visualizer untuk melanjutkan",
             "System audio visualizer" to "Visualizer audio sistem",
             "Audio paused" to "Audio dijeda",
             "Audio active" to "Audio aktif"
@@ -573,8 +584,32 @@ class FloatingVisualizerService : Service() {
             .putBoolean("backup_capture", false)
             .apply()
         broadcastStatus("AUDIO_PAUSED: Audio analysis paused from notification")
-        refreshNotification("Audio paused · tap Resume to continue")
+        refreshNotification("Audio paused · tap Start Visualizer to continue")
     }
+
+    private fun handleNotificationEqToggle() {
+        val prefs = getSharedPreferences("eq_presets_v1", MODE_PRIVATE)
+        val enabled = prefs.getBoolean("engine_enabled", false)
+        if (enabled) {
+            prefs.edit().putBoolean("engine_enabled", false).apply()
+            // EqEngineService owns the effect handles; stop it rather than releasing
+            // them from this unrelated foreground service.
+            stopService(Intent(this, EqEngineService::class.java))
+        } else {
+            prefs.edit().putBoolean("engine_enabled", true).apply()
+            val eqIntent = Intent(this, EqEngineService::class.java)
+            try {
+                if (Build.VERSION.SDK_INT >= 26) startForegroundService(eqIntent) else startService(eqIntent)
+            } catch (t: Throwable) {
+                prefs.edit().putBoolean("engine_enabled", false).apply()
+                broadcastStatus("EQ_NOTIFICATION_ERROR: ${t.message ?: "EQ service could not start"}")
+            }
+        }
+        refreshNotification(if (engineSource == EngineSource.NONE) "Audio paused" else "Audio active")
+    }
+
+    private fun notificationEqEnabled(): Boolean = getSharedPreferences("eq_presets_v1", MODE_PRIVATE)
+        .getBoolean("engine_enabled", false)
 
     private fun handleNotificationAudioToggle() {
         if (engineSource == EngineSource.NONE) {
@@ -662,13 +697,15 @@ class FloatingVisualizerService : Service() {
         val audioActive = engineSource != EngineSource.NONE
         val backupActive = engineSource == EngineSource.PROJECTION
         val overlayLabel = localizedServiceText("Floating")
-        val audioLabel = localizedServiceText(if (audioActive) "Pause" else "Resume")
+        val audioLabel = localizedServiceText(if (audioActive) "Stop Visualizer" else "Start Visualizer")
         val backupLabel = localizedServiceText("M.Proj")
+        val eqActive = notificationEqEnabled()
         val overlayState = if (floatingOverlayEnabled) "ON" else "OFF"
         val backupState = if (backupActive) "ON" else "OFF"
+        val eqState = if (eqActive) "ON" else "OFF"
         val studioAccent = notificationStudioAccent()
         val compactSummary = localizedServiceText(
-            "Floating $overlayState · ${if (audioActive) "Pause" else "Resume"} · M.Proj $backupState"
+            "Floating $overlayState · ${if (audioActive) "Stop Visualizer" else "Start Visualizer"} · EQ $eqState · M.Proj $backupState"
         )
 
         val builder = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, CHANNEL_ID)
@@ -690,6 +727,7 @@ class FloatingVisualizerService : Service() {
             val primaryTextColor = if (isNightMode) Color.WHITE else Color.rgb(32, 33, 36)
             setTextColor(R.id.notificationFloatingLabel, primaryTextColor)
             setTextColor(R.id.notificationPauseLabel, primaryTextColor)
+            setTextColor(R.id.notificationEqLabel, primaryTextColor)
             setTextColor(R.id.notificationProjectionLabel, primaryTextColor)
             setImageViewResource(R.id.notificationFloatingIcon, android.R.drawable.ic_menu_view)
             setTextViewText(R.id.notificationFloatingLabel, overlayLabel)
@@ -717,12 +755,25 @@ class FloatingVisualizerService : Service() {
 
             setImageViewResource(
                 R.id.notificationPauseIcon,
-                if (audioActive) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play
+                if (audioActive) R.drawable.ic_notification_stop else android.R.drawable.ic_media_play
             )
             setTextViewText(R.id.notificationPauseLabel, audioLabel)
             setOnClickPendingIntent(
                 R.id.notificationPauseRow,
                 serviceActionPendingIntent(ACTION_NOTIFICATION_TOGGLE_AUDIO, 9102)
+            )
+
+            setImageViewResource(R.id.notificationEqIcon, android.R.drawable.ic_media_ff)
+            setTextViewText(R.id.notificationEqLabel, localizedServiceText("EQ Engine"))
+            if (Build.VERSION.SDK_INT >= 31) {
+                setImageViewBitmap(R.id.notificationEqSwitch, buildNotificationToggleBitmap(eqActive, studioAccent))
+            } else {
+                setImageViewBitmap(R.id.notificationEqSwitch, buildNotificationToggleBitmap(eqActive, studioAccent))
+            }
+            setContentDescription(R.id.notificationEqSwitch, if (eqActive) "Equalizer on" else "Equalizer off")
+            setOnClickPendingIntent(
+                R.id.notificationEqSwitch,
+                serviceActionPendingIntent(ACTION_NOTIFICATION_TOGGLE_EQ, 9104)
             )
 
             setImageViewResource(R.id.notificationProjectionIcon, android.R.drawable.ic_menu_manage)
@@ -760,7 +811,7 @@ class FloatingVisualizerService : Service() {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             // Custom controls are ordinary notification actions, not a MediaSession.
-            // The media-style icon is used only for the independent Pause/Resume row.
+            // The media-style icon is used only for the independent Start/Stop Visualizer row.
             .setStyle(Notification.DecoratedCustomViewStyle())
             .setCustomContentView(compactView)
             .setCustomBigContentView(expandedView)

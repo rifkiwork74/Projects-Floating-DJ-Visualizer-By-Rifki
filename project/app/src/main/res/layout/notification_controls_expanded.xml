@@ -52,6 +52,49 @@
         android:background="#22777777" />
 
     <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp">
+
+        <ImageView
+            android:id="@+id/notificationEqIcon"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:contentDescription="Equalizer engine"
+            android:src="@android:drawable/ic_media_ff"
+            android:tint="#777777" />
+
+        <TextView
+            android:id="@+id/notificationEqLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:text="EQ Engine"
+            android:textColor="#202124"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/notificationEqSwitch"
+            android:layout_width="54dp"
+            android:layout_height="30dp"
+            android:contentDescription="Toggle Equalizer"
+            android:scaleType="fitCenter"
+            android:src="@drawable/notification_switch_off" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="44dp"
+        android:layout_marginEnd="4dp"
+        android:background="#22777777" />
+
+    <LinearLayout
         android:id="@+id/notificationPauseRow"
         android:layout_width="match_parent"
         android:layout_height="52dp"

@@ -383,6 +383,19 @@ class MainActivity : Activity() {
         barAppearancePresetContainer = findViewById(R.id.barAppearancePresetContainer)
         colorSwatches = findViewById(R.id.colorSwatches)
         floatingProfilesList = findViewById(R.id.floatingProfilesList)
+        val floatingProfilesScroll = findViewById<ScrollView>(R.id.floatingProfilesScroll)
+        // Lock the outer page as soon as a gesture starts inside the profile canvas.
+        // This prevents the parent ScrollView from stealing vertical drag gestures.
+        floatingProfilesScroll.setOnTouchListener { view, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> view.parent?.requestDisallowInterceptTouchEvent(true)
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> view.parent?.requestDisallowInterceptTouchEvent(false)
+            }
+            false
+        }
+        findViewById<View>(R.id.cardEqEngine).setOnClickListener {
+            startActivity(Intent(this, EqualizerActivity::class.java))
+        }
         floatingProfileCount = findViewById(R.id.txtFloatingProfileCount)
         colorProfileFloatingControls = findViewById(R.id.colorProfileFloatingControls)
         liveFrequencyLabels = findViewById(R.id.liveFrequencyLabels)
@@ -547,6 +560,57 @@ class MainActivity : Activity() {
             receiverRegistered = false
         }
         super.onStop()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // The EQ Activity owns its own window. Refresh this entry card whenever it returns
+        // so the traffic-light state follows the persisted EQ engine switch.
+        updateEqEngineCardStatus()
+        if (::mainShell.isInitialized) styleEqEngineCard(isLightTheme(), currentAccent())
+    }
+
+    private fun updateEqEngineCardStatus() {
+        val requested = getSharedPreferences("eq_presets_v1", MODE_PRIVATE)
+            .getBoolean("engine_enabled", false)
+        val enabled = requested && try {
+            com.floatingdj.visualizer.eq.core.EqEngineController.isActive()
+        } catch (_: Throwable) {
+            false
+        }
+        val statusView = findViewById<TextView>(R.id.txtEqEngineStatus) ?: return
+        val color = if (enabled) Color.rgb(34, 197, 94) else Color.rgb(239, 91, 102)
+        statusView.text = if (appLanguage == "id") {
+            if (enabled) "●  EQ · Status: AKTIF" else "●  EQ · Status: OFF"
+        } else {
+            if (enabled) "●  EQ · Status: ACTIVE" else "●  EQ · Status: OFF"
+        }
+        statusView.setTextColor(color)
+        statusView.background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = 11.dp().toFloat()
+            setColor(Color.argb(25, Color.red(color), Color.green(color), Color.blue(color)))
+            setStroke(1.dp(), Color.argb(105, Color.red(color), Color.green(color), Color.blue(color)))
+        }
+        statusView.setPadding(9.dp(), 4.dp(), 9.dp(), 4.dp())
+        statusView.contentDescription = if (appLanguage == "id") {
+            if (enabled) "Mesin equalizer aktif" else "Mesin equalizer mati"
+        } else {
+            if (enabled) "Equalizer engine active" else "Equalizer engine off"
+        }
+    }
+
+    private fun styleEqEngineCard(light: Boolean, accent: Int) {
+        val card = findViewById<View>(R.id.cardEqEngine) ?: return
+        card.background = cardDrawable(light, accent)
+        val arrow = findViewById<TextView>(R.id.txtEqEngineArrow)
+        arrow?.background = pillDrawable(false, light, accent, 12)
+        arrow?.setTextColor(pillForegroundColor(light, false))
+        updateEqEngineCardStatus()
+        val title = findViewById<TextView>(R.id.txtEqEngineTitle)
+        val subtitle = findViewById<TextView>(R.id.txtEqEngineSubtitle)
+        title?.setTextColor(contentThemeTextColor(light))
+        subtitle?.setTextColor(if (light) Color.parseColor("#68768D") else Color.parseColor("#A5B2C7"))
     }
 
     override fun onDestroy() {
@@ -1200,7 +1264,7 @@ class MainActivity : Activity() {
         val cards = intArrayOf(
             R.id.cardBackup, R.id.cardTheme, R.id.cardPreview, R.id.cardMode,
             R.id.cardColors, R.id.cardEffects, R.id.cardFloatingSceneManager,
-            R.id.cardFloatingOverlay, R.id.cardFloatingProfiles
+            R.id.cardFloatingOverlay, R.id.cardFloatingProfiles, R.id.cardEqEngine
         )
         for (id in cards) {
             findViewById<View>(id)?.background = cardDrawable(light, accent)
@@ -1230,6 +1294,7 @@ class MainActivity : Activity() {
             styleLiveFrequencyLabels(light, accent)
         }
         styleResetControls(light, accent)
+        styleEqEngineCard(light, accent)
         // These profile selectors are created dynamically. styleDynamicTree updates
         // their text, but their old GradientDrawable would otherwise retain the
         // dark surface from the theme active at creation time.
@@ -6288,6 +6353,8 @@ class MainActivity : Activity() {
             "BACKUP AUDIO CAPTURE" to "CADANGAN AUDIO",
             "Optional · MediaProjection, only when needed" to "Opsional · MediaProjection kalau dibutuhkan",
             "FLOATING BAR OVERLAY" to "FLOATING BAR DI ATAS APLIKASI",
+            "EQ · EQUALIZER AUDIO ENGINE" to "EQ · MESIN EQUALIZER AUDIO",
+            "Equalizer, Bass Boost & audio diagnostics" to "Equalizer, Bass Boost & diagnostik audio",
             "Optional · show bar over other apps" to "Opsional · munculkan bar di atas aplikasi lain",
             "Optional · tampilkan bar di atas aplikasi lain" to "Opsional · munculkan bar di atas aplikasi lain",
             "APPEARANCE STUDIO" to "STUDIO TAMPILAN",
