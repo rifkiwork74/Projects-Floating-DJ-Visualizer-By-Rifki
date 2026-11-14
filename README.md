@@ -52,7 +52,7 @@
   <tr>
     <td align="center"><img src="dokumentasi/dokumentasi-1.jpg" width="220" alt="Preview 1" /></td>
     <td align="center"><img src="dokumentasi/dokumentasi-2.jpg" width="220" alt="Preview 2" /></td>
-    <td align="center"><img src="dokumentasi/dikumentasi-3.jpg" width="220" alt="Preview 3" /></td>
+    <td align="center"><img src="dokumentasi/dokumentasi-3.jpg" width="220" alt="Preview 3" /></td>
   </tr>
   <tr>
     <td align="center"><img src="dokumentasi/dokumentasi-4.jpg" width="220" alt="Preview 4" /></td>
