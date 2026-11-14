@@ -21,10 +21,10 @@
   <p><b>Visualisasi audio Android dengan floating overlay, kustomisasi mendalam, dan Equalizer Engine terintegrasi.</b></p>
 
   <p>
-    <a href="#-preview-aplikasi">Preview</a> ·
-    <a href="#-fitur-utama-key-features">Features</a> ·
-    <a href="#-changelog">Changelog</a> ·
-    <a href="#-contact--collaboration">Contact</a>
+    <a href="#preview-aplikasi">Preview</a> ·
+    <a href="#fitur-utama">Features</a> ·
+    <a href="#changelog">Changelog</a> ·
+    <a href="#contact-collaboration">Contact</a>
   </p>
 
 </div>
@@ -33,16 +33,18 @@
 
 ## 📑 Daftar Isi | Table of Contents
 
-- [📸 Preview Aplikasi](#-preview-aplikasi)
-- [📖 Tentang Proyek](#-tentang-proyek-about-the-project)
-- [✨ Fitur Utama](#-fitur-utama-key-features)
-- [🎨 Test Presets](#-preset-uji-coba-test-presets)
-- [🛠️ Teknologi](#-teknologi-tech-stack)
-- [📱 Kompatibilitas](#-kompatibilitas-compatibility)
-- [📝 Changelog](#-changelog)
-- [📬 Contact & Collaboration](#-contact--collaboration)
+- [📸 Preview Aplikasi](#preview-aplikasi)
+- [📖 Tentang Proyek](#tentang-proyek)
+- [✨ Fitur Utama](#fitur-utama)
+- [🎨 Test Presets](#test-presets)
+- [🛠️ Teknologi](#tech-stack)
+- [📱 Kompatibilitas](#kompatibilitas)
+- [📝 Changelog](#changelog)
+- [📬 Contact & Collaboration](#contact-collaboration)
 
 ---
+
+<a id="preview-aplikasi"></a>
 
 ## 📸 Preview Aplikasi
 
@@ -50,7 +52,7 @@
   <tr>
     <td align="center"><img src="dokumentasi/dokumentasi-1.jpg" width="220" alt="Preview 1" /></td>
     <td align="center"><img src="dokumentasi/dokumentasi-2.jpg" width="220" alt="Preview 2" /></td>
-    <td align="center"><img src="dokumentasi/dokumentasi-3.jpg" width="220" alt="Preview 3" /></td>
+    <td align="center"><img src="dokumentasi/dikumentasi-3.jpg" width="220" alt="Preview 3" /></td>
   </tr>
   <tr>
     <td align="center"><img src="dokumentasi/dokumentasi-4.jpg" width="220" alt="Preview 4" /></td>
@@ -62,6 +64,8 @@
 <p align="center"><i>Lihat koleksi lengkap tangkapan layar lainnya di folder <a href="dokumentasi/">dokumentasi/</a>.</i></p>
 
 ---
+
+<a id="tentang-proyek"></a>
 
 ## 📖 Tentang Proyek | About the Project
 
@@ -76,6 +80,8 @@ Pada **v3.0.9**, proyek memasuki tahap baru dengan menghadirkan equalizer audio 
 > **Built directly from an Android smartphone.** Seluruh proses pengembangan dilakukan langsung melalui smartphone Android menggunakan IDE open-source **[CodeAssist](https://github.com/tyron12233/CodeAssist)**.
 
 ---
+
+<a id="fitur-utama"></a>
 
 ## ✨ Fitur Utama | Key Features
 
@@ -144,6 +150,8 @@ Pada **v3.0.9**, proyek memasuki tahap baru dengan menghadirkan equalizer audio 
 
 ---
 
+<a id="test-presets"></a>
+
 ## 🎨 Preset Uji Coba | Test Presets
 
 Ingin langsung mencoba konfigurasi yang sudah disiapkan?
@@ -165,6 +173,8 @@ Kunjungi folder **[`Test - Preset`](Test%20-%20Preset/)** di repositori ini. Fol
 
 ---
 
+<a id="tech-stack"></a>
+
 ## 🛠️ Teknologi | Tech Stack
 
 | Component | Technology |
@@ -179,6 +189,8 @@ Kunjungi folder **[`Test - Preset`](Test%20-%20Preset/)** di repositori ini. Fol
 | **Build System** | Gradle / Android Build Tools |
 
 ---
+
+<a id="kompatibilitas"></a>
 
 ## 📱 Kompatibilitas | Compatibility
 
@@ -195,6 +207,8 @@ Kunjungi folder **[`Test - Preset`](Test%20-%20Preset/)** di repositori ini. Fol
 - EQ Output Mix tetap eksperimental dan tidak menjamin pemrosesan global pada semua aplikasi.
 
 ---
+
+<a id="changelog"></a>
 
 ## 📝 Changelog
 
@@ -268,6 +282,8 @@ Kunjungi folder **[`Test - Preset`](Test%20-%20Preset/)** di repositori ini. Fol
 > Untuk riwayat versi sebelumnya seperti v2.3.3, v2.2.3, dan v1.x, silakan kunjungi halaman Releases repositori.
 
 ---
+
+<a id="contact-collaboration"></a>
 
 ## 📬 Contact & Collaboration
 
