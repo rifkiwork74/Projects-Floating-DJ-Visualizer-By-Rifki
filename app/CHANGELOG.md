@@ -1,3 +1,11 @@
+## V3.0.9 — Live Fader-to-Engine Output Fix (versionCode 82)
+
+- Fix the missing audio-engine write in the custom vertical fader callback. Previously, dragging a fader updated only the UI/working profile; the EQ engine was not receiving `setBand(...)`, so the actual effect remained at its previous value and `onPause()` read-back restored the old gain.
+- Route every accepted vertical fader change through `EqEngineController.setBand(...)` and read back the value from the active DynamicsProcessing/Native Equalizer backend. The fader thumb, dB label, and Current State now follow the engine-confirmed gain.
+- Apply the same gain to every configured DynamicsProcessing channel to keep left/right output consistent; verify control ownership again after the write and report control loss rather than silently persisting an un-applied value.
+- Persist the engine-confirmed working profile at the end of a fader gesture or cancelled gesture, instead of writing SharedPreferences on every MotionEvent. Activity pause/destroy continues to capture the active effect read-back as a final safeguard.
+- Keep `versionName = "3.0.9"`; increment `versionCode` from 81 to 82 so Android/CodeAssist installs this corrective build as a newer package. No visualizer renderer or audio-session routing strategy was changed.
+
 ## V3.0.9 — Android Package Version Metadata Fix
 - Keep versionName at 3.0.9 and increment versionCode to 81 so Android/CodeAssist recognizes this package as a new installable build and invalidates the prior 3.0.8 package metadata.
 
@@ -15,15 +23,6 @@
 - Replaced the unavailable `android.R.drawable.ic_media_stop` reference with the app-owned vector drawable `R.drawable.ic_notification_stop`.
 - Kept the existing Start Visualizer play icon and notification action behavior unchanged.
 - No EQ engine, audio routing, preset, or visualizer rendering logic changed.
-
-
-## V3.0.8 — Mixer Controls & Notification Recovery
-- Enlarged vertical EQ fader hit area and mixer-style rectangular fader cap; fader touch now disallows parent scroll interception while dragging.
-- Band gain editor adds a horizontal precision slider with live preview, min/max validation, Previous/Next navigation, Save commit, and Back/X rollback.
-- Preamp, Bass Boost, Virtualizer, Limiter, and Reverb controls are separated into themed effect cards; boost controls show percentage readouts and dependent controls visibly disable while EQ is off.
-- Added Equalizer Engine toggle to the Visualizer foreground notification and renamed the audio row to Start/Stop Visualizer. Notification state reads the persisted EQ and floating settings; EQ service refreshes the host notification after lifecycle changes.
-- Export now asks whether to export Current State or a named preset. Import asks whether to apply to Current State or save as a new preset.
-
 
 ## V3.0.7 — EQ Navigation & Precision Input Polish
 - Replace the native Spinner preset control with a Theme Studio-aware glass dropdown popup, including selected-state markers, supporting text and scrollable preset library.
@@ -55,36 +54,25 @@
 - Preserve limiter behavior as a dynamic stage; the user controls enable/disable while threshold/ratio/attack/release remain fixed defaults in this release.
 - Preserve MainActivity and FloatingVisualizerService renderer sources.
 
-## V3.0.2 — Limiter & Preset State Engine
-- Add a real DynamicsProcessing limiter stage to the API 28+ 10-band configuration; leave it bypassed by default and allow explicit enable/disable when the active backend supports it.
-- Persist limiter enable state in the working profile and portable EQ preset JSON.
-- Distinguish the unsaved working configuration as “Current State” in the preset selector, while retaining named presets independently.
-- Replace the ambiguous unsupported-band note with an explanation that unavailable preset frequency points are retained but not processed by the active backend.
-- Add runtime Reverb descriptor inventory and device/API diagnostics. Keep Reverb disabled for external-app/global playback because auxiliary Reverb requires each player to attach its output and set a send level; vendor post-processing descriptors are reported but not treated as app-accessible controls.
-- Keep MainActivity and FloatingVisualizerService renderer sources unchanged from V3.0.1/V2.4.32 baseline.
+## V3.0.2
+- Add an optional limiter stage to the existing DynamicsProcessing 10-band backend, disabled by default and controlled only when the active effect grants control.
+- Save and restore Limiter state with working EQ state and named/imported presets.
+- Show “Current State” when live values differ from the selected saved preset; preserve named preset entries.
+- Clarify unsupported frequency points and display Reverb capability descriptors with device/API details. Reverb remains unavailable as a global external-app control without an attach/send path or OEM route integration.
 
-## V3.0.1 — Adaptive EQ Engine
-- Add a 10-band DynamicsProcessing pre-EQ backend probe for API 28+; use it only when the runtime exposes the effect and grants control on the experimental output session.
-- Keep the native Equalizer backend as an honest fallback; display the actual band count reported by the active backend and never create simulated sliders.
-- Preserve and restore the current unsaved EQ state independently from named presets, including band gains, Bass Boost, and Virtualizer values.
-- Reapply the saved working state when the foreground EQ service recreates native effect handles.
-- Preserve old five-band profiles when opening a 10-band backend; use explicit logarithmic interpolation when expanding an older smaller profile and retain a mapping warning.
-- Keep the Visualizer renderers and V2.4.32 baseline code unchanged.
+## v3.0.1
+- Add adaptive 10-band DynamicsProcessing backend probing with native Equalizer fallback.
+- Persist live EQ/Bass Boost/Virtualizer state separately from named presets and restore it after Activity/service recreation.
+- Add explicit log-frequency interpolation when expanding older smaller EQ profiles; preserve unsupported points.
 
-## V3.0.0 build fix
-- Corrected `ScrollView.fillViewport` to Kotlin synthetic property `isFillViewport` in `EqualizerActivity`.
-
-## V3.0.0
-- Preserve the v2.4.32 Visualizer renderer and floating overlay implementation as the baseline.
-- Add a separate EqualizerActivity and an isolated AudioEffect controller with runtime capability probing.
-- Add output-mix (session 0) experimental EQ/BassBoost/Virtualizer support with explicit legacy/experimental status; no global-audio guarantee is made.
-- Add runtime-native band display, read-back values, preset save/rename/delete/reset, and JSON import/export.
-- Prevent the outer MainActivity ScrollView from intercepting gestures that begin inside Floating Profile's nested scroll canvas.
-- Reverb is shown as a future/unsupported route-dependent feature; no fake active control is exposed.
-
-## v2.4.32 baseline
-- Restore the complete v2.4.30 Display/Choreographer preview scheduling and live interpolation; remove the v2.4.31 preview pausing, 30 FPS pacing, and parent-only invalidation changes that could leave the Display preview visually frozen.
-- Reduce only the in-app Display preview glow; keep the full Floating Service renderer unchanged.
-- Keep Display and Floating renderers running simultaneously.
+## v3.0.0
+- Add modular EQ Activity, audio controller, preset repository, capability probe, and foreground service.
+- Keep the existing Floating DJ Visualizer renderer intact.
 
 
+## V3.0.8 — Mixer Controls & Notification Recovery
+- Enlarged vertical EQ fader hit area and mixer-style rectangular fader cap; fader touch now disallows parent scroll interception while dragging.
+- Band gain editor adds a horizontal precision slider with live preview, min/max validation, Previous/Next navigation, Save commit, and Back/X rollback.
+- Preamp, Bass Boost, Virtualizer, Limiter, and Reverb controls are separated into themed effect cards; boost controls show percentage readouts and dependent controls visibly disable while EQ is off.
+- Added Equalizer Engine toggle to the Visualizer foreground notification and renamed the audio row to Start/Stop Visualizer. Notification state reads the persisted EQ and floating settings; EQ service refreshes the host notification after lifecycle changes.
+- Export now asks whether to export Current State or a named preset. Import asks whether to apply to Current State or save as a new preset.

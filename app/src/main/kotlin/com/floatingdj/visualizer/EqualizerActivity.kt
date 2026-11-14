@@ -47,6 +47,7 @@ class EqualizerActivity : Activity() {
     private var pendingExportProfile: EqProfile? = null
     private var bandEditDialogOpen = false
     private var bandEditSessionId = 0
+    private var faderWriteFailureShown = false
     private lateinit var bassSwitch: Switch
     private lateinit var virtualSwitch: Switch
     private lateinit var bassSlider: SeekBar
@@ -733,12 +734,17 @@ class EqualizerActivity : Activity() {
         private val minimumFlingVelocity = viewConfig.scaledMinimumFlingVelocity
         private var velocityTracker: android.view.VelocityTracker? = null
         private var gainMb = band.levelMb.coerceIn(band.minMb, band.maxMb)
+        // Keep the last value confirmed by the active native effect. A failed write
+        // must snap back to this value, not to the initial value captured at layout time.
+        private var confirmedGainMb = gainMb
         private var downX = 0f
         private var downY = 0f
         private var lastX = 0f
         private var verticalDrag = false
         private var horizontalGesture = false
+        private var gainChangedInGesture = false
         var onGainChanged: ((Int) -> Unit)? = null
+        var onGainCommitted: ((Int) -> Unit)? = null
 
         init {
             isFocusable = true
@@ -749,8 +755,11 @@ class EqualizerActivity : Activity() {
 
         fun setGainMb(value: Int) {
             val next = value.coerceIn(band.minMb, band.maxMb)
+            confirmedGainMb = next
             if (next != gainMb) { gainMb = next; invalidate() }
         }
+
+        fun lastConfirmedGainMb(): Int = confirmedGainMb
 
         private fun trackTop() = dp(20).toFloat()
         private fun trackBottom() = (height - dp(20)).toFloat().coerceAtLeast(trackTop() + 1f)
@@ -762,6 +771,7 @@ class EqualizerActivity : Activity() {
             val next = (band.minMb + fraction * (band.maxMb - band.minMb)).roundToInt().coerceIn(band.minMb, band.maxMb)
             if (next != gainMb) {
                 gainMb = next
+                gainChangedInGesture = true
                 invalidate()
                 onGainChanged?.invoke(next)
             }
@@ -812,6 +822,7 @@ class EqualizerActivity : Activity() {
                 MotionEvent.ACTION_DOWN -> {
                     downX = event.x; downY = event.y; lastX = event.x
                     verticalDrag = false; horizontalGesture = false
+                    gainChangedInGesture = false
                     velocityTracker?.recycle()
                     velocityTracker = android.view.VelocityTracker.obtain().also { it.addMovement(event) }
                     // Keep both parent scroll containers from stealing this fader gesture;
@@ -851,15 +862,21 @@ class EqualizerActivity : Activity() {
                         applyTouchY(event.y)
                         performClick()
                     }
+                    if (gainChangedInGesture) onGainCommitted?.invoke(gainMb)
                     velocityTracker?.recycle(); velocityTracker = null
                     parent?.requestDisallowInterceptTouchEvent(false)
                     verticalDrag = false; horizontalGesture = false
+                    gainChangedInGesture = false
                     return true
                 }
                 MotionEvent.ACTION_CANCEL -> {
+                    // ACTION_CANCEL can occur when the window loses focus; persist the
+                    // last engine-confirmed value so the next Activity open stays in sync.
+                    if (gainChangedInGesture) onGainCommitted?.invoke(gainMb)
                     velocityTracker?.recycle(); velocityTracker = null
                     parent?.requestDisallowInterceptTouchEvent(false)
                     verticalDrag = false; horizontalGesture = false
+                    gainChangedInGesture = false
                     return true
                 }
             }
@@ -1143,14 +1160,43 @@ class EqualizerActivity : Activity() {
             }
             column.addView(value, LinearLayout.LayoutParams(-1, dp(32)))
 
-            val fader = MixerFaderView(band).apply {
+            val fader = MixerFaderView(band)
+            fader.apply {
                 contentDescription = uiText("Fader ${band.centerHz} Hz. Geser vertikal untuk mengubah gain.", "${band.centerHz} Hz fader. Drag vertically to change gain.")
                 setGainMb(band.levelMb)
-                onGainChanged = { appliedMb ->
-                    value.text = String.format(java.util.Locale.US, "%.1f dB", appliedMb / 100f)
-                    updateActiveBandValue(band.centerHz, appliedMb)
-                    persistCurrentState()
-                    markWorkingStateSelected()
+                onGainChanged = { requestedMb ->
+                    // IMPORTANT: the fader must write to the native effect handle,
+                    // not only update the label/profile. Input-value editing already
+                    // used this controller path; this fixes the missing fader route.
+                    val appliedMb = EqEngineController.setBand(band.index, requestedMb)
+                    if (appliedMb == null) {
+                        val actualMb = EqEngineController.bands()
+                            .firstOrNull { it.index == band.index }?.levelMb ?: fader.lastConfirmedGainMb()
+                        fader.setGainMb(actualMb)
+                        value.text = String.format(java.util.Locale.US, "%.1f dB", actualMb / 100f)
+                        updateActiveBandValue(band.centerHz, actualMb)
+                        if (!faderWriteFailureShown) {
+                            faderWriteFailureShown = true
+                            val reason = EqEngineController.lastError
+                            toast(uiText(
+                                "Fader tidak dapat mengirim nilai ke audio engine${reason?.let { ": $it" } ?: ". Periksa status kontrol EQ."}",
+                                "Fader could not write to the audio engine${reason?.let { ": $it" } ?: ". Check EQ control status."}"
+                            ))
+                        }
+                    } else {
+                        faderWriteFailureShown = false
+                        // Use read-back from DynamicsProcessing/Equalizer so the
+                        // displayed value always reflects what the effect accepted.
+                        fader.setGainMb(appliedMb)
+                        value.text = String.format(java.util.Locale.US, "%.1f dB", appliedMb / 100f)
+                        updateActiveBandValue(band.centerHz, appliedMb)
+                        markWorkingStateSelected()
+                    }
+                }
+                onGainCommitted = {
+                    // Persist once at the end of a gesture, not for every MotionEvent.
+                    // onPause also captures the engine read-back as a safety net.
+                    persistCurrentState(captureFromEngine = true)
                 }
             }
             column.addView(fader, LinearLayout.LayoutParams(-1, dp(312)).apply {

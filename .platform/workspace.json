@@ -2,8 +2,8 @@
   "version": 1,
   "projects": [
     {
-      "id": "Floating DJ Visualizer 3.0.9",
-      "name": "Floating DJ Visualizer 3.0.9 · Implementasi Equalizer Engine",
+      "id": "Floating DJ Visualizer 3.0.9 · Live Fader Output Fix",
+      "name": "Floating DJ Visualizer 3.0.9 · Live Fader Output Fix",
       "root": "",
       "buildSystem": "native",
       "settings": {},

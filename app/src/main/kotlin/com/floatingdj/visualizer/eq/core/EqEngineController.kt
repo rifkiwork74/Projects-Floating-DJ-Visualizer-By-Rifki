@@ -185,26 +185,49 @@ object EqEngineController {
             when (backend) {
                 Backend.DYNAMICS_PROCESSING_10 -> {
                     val dp = dynamics ?: return null
-                    if (!dp.hasControl() || index !in tenBandCenters.indices) return null
+                    if (!dp.hasControl()) {
+                        lastError = "DynamicsProcessing tidak lagi memegang kontrol audio effect."
+                        return null
+                    }
+                    if (index !in tenBandCenters.indices) return null
                     val wantedDb = levelMb.coerceIn(-1500, 1500) / 100f
+                    // Apply the same gain to every output channel to avoid left/right
+                    // imbalance while the user drags a single graphic-EQ band.
                     for (channel in 0 until dp.channelCount) {
                         val current = dp.getPreEqBandByChannelIndex(channel, index)
                         val updated = android.media.audiofx.DynamicsProcessing.EqBand(current)
                         updated.gain = wantedDb
                         dp.setPreEqBandByChannelIndex(channel, index, updated)
                     }
+                    if (!dp.hasControl()) {
+                        lastError = "Kontrol DynamicsProcessing berpindah ketika fader sedang digeser."
+                        return null
+                    }
+                    // Read the value back from the native effect; never assume the
+                    // requested value was accepted unchanged by the device effect.
                     (dp.getPreEqBandByChannelIndex(0, index).gain * 100f).toInt()
                 }
                 Backend.NATIVE_EQUALIZER -> {
                     val eq = equalizer ?: return null
-                    if (!eq.hasControl() || index !in 0 until eq.numberOfBands.toInt()) return null
+                    if (!eq.hasControl()) {
+                        lastError = "Equalizer native tidak lagi memegang kontrol audio effect."
+                        return null
+                    }
+                    if (index !in 0 until eq.numberOfBands.toInt()) return null
                     val range = eq.bandLevelRange
                     eq.setBandLevel(index.toShort(), levelMb.coerceIn(range[0].toInt(), range[1].toInt()).toShort())
+                    if (!eq.hasControl()) {
+                        lastError = "Kontrol Equalizer berpindah ketika fader sedang digeser."
+                        return null
+                    }
                     eq.getBandLevel(index.toShort()).toInt()
                 }
                 else -> null
             }
-        } catch (_: Throwable) { null }
+        } catch (t: Throwable) {
+            lastError = "Gagal menerapkan gain band ${index + 1}: ${t.javaClass.simpleName}: ${t.message ?: "effect write failed"}"
+            null
+        }
     }
 
     @Synchronized fun setEnabled(enabled: Boolean): Boolean = try {
