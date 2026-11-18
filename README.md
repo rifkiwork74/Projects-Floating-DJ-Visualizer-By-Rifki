@@ -47,7 +47,7 @@
     <td width="50%"><img src="dokumentasi/dokumentasi-2.jpg" width="100%" alt="Floating profile screen"></td>
   </tr>
   <tr>
-    <td width="50%"><img src="dokumentasi/dikumentasi-3.jpg" width="100%" alt="Theme Studio screen"></td>
+    <td width="50%"><img src="dokumentasi/dokumentasi-3.jpg" width="100%" alt="Theme Studio screen"></td>
     <td width="50%"><img src="dokumentasi/dokumentasi-4.jpg" width="100%" alt="Scene Manager screen"></td>
   </tr>
   <tr>
