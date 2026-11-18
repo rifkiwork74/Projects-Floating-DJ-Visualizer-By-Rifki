@@ -2,16 +2,16 @@
 
 # Floating DJ Visualizer
 
-### Android Floating Audio Visualizer & Experimental Equalizer
+### Android Floating Audio Visualizer &amp; Experimental Equalizer
 
 **Developed by Rifki**
 
 <p>
-  <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Platform: Android">
-  <img src="https://img.shields.io/badge/Language-Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Language: Kotlin">
+  <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&amp;logo=android&amp;logoColor=white" alt="Platform: Android">
+  <img src="https://img.shields.io/badge/Language-Kotlin-7F52FF?style=for-the-badge&amp;logo=kotlin&amp;logoColor=white" alt="Language: Kotlin">
   <img src="https://img.shields.io/badge/Version-v3.0.18-2563EB?style=for-the-badge" alt="Version 3.0.18">
   <a href="https://github.com/tyron12233/CodeAssist">
-    <img src="https://img.shields.io/badge/IDE-CodeAssist-24292F?style=for-the-badge&logo=github&logoColor=white" alt="Built with CodeAssist">
+    <img src="https://img.shields.io/badge/IDE-CodeAssist-24292F?style=for-the-badge&amp;logo=github&amp;logoColor=white" alt="Built with CodeAssist">
   </a>
 </p>
 
@@ -59,7 +59,8 @@
 
 <p align="center"><sub>Tap a thumbnail to view the full-size image. / Ketuk thumbnail untuk melihat gambar ukuran penuh.</sub></p>
 
-<table>
+<div align="center">
+<table align="center">
   <tr>
     <td align="center" width="33%">
       <a href="dokumentasi/dokumentasi-1.jpg"><img src="dokumentasi/dokumentasi-1.jpg" width="118" alt="Main application dashboard"></a><br>
@@ -70,25 +71,26 @@
       <sub><strong>02 - Floating Profiles</strong><br>Profile dan Layer</sub>
     </td>
     <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-3.jpg"><img src="dokumentasi/dokumentasi-3.jpg" width="118" alt="Theme Studio and color profiles"></a><br>
-      <sub><strong>03 - Pallet Studio Bar</strong><br>Pallet dan Warna</sub>
+      <a href="dokumentasi/dokumentasi-3.jpg"><img src="dokumentasi/dokumentasi-3.jpg" width="118" alt="Palette Studio with bar color profiles"></a><br>
+      <sub><strong>03 - Bar Palette Studio</strong><br>Studio Palet Warna Bar</sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-4.jpg"><img src="dokumentasi/dokumentasi-4.jpg" width="118" alt="Floating Scene Manager"></a><br>
-      <sub><strong>04 - Equalizer Engine</strong><br>Pengelola Bands Equalizer</sub>
+      <a href="dokumentasi/dokumentasi-4.jpg"><img src="dokumentasi/dokumentasi-4.jpg" width="118" alt="Equalizer bands interface"></a><br>
+      <sub><strong>04 - Equalizer Bands</strong><br>Band Equalizer</sub>
     </td>
     <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-5.jpg"><img src="dokumentasi/dokumentasi-5.jpg" width="118" alt="Equalizer modern engine"></a><br>
-      <sub><strong>05 - Component Equalizer Engine</strong><br>Mesin Bass bosst Equalizer</sub>
+      <a href="dokumentasi/dokumentasi-5.jpg"><img src="dokumentasi/dokumentasi-5.jpg" width="118" alt="Equalizer components and audio effects"></a><br>
+      <sub><strong>05 - Equalizer Components</strong><br>Komponen Equalizer dan Efek Audio</sub>
     </td>
     <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-6.jpg"><img src="dokumentasi/dokumentasi-6.jpg" width="118" alt="Audio effects and controls"></a><br>
-      <sub><strong>06 - Preset Color 100 Pallet Bar</strong><br>Galery 100 Warna Bar </sub>
+      <a href="dokumentasi/dokumentasi-6.jpg"><img src="dokumentasi/dokumentasi-6.jpg" width="118" alt="100-color bar palette gallery"></a><br>
+      <sub><strong>06 - 100 Bar Color Palettes</strong><br>Galeri 100 Palet Warna Bar</sub>
     </td>
   </tr>
 </table>
+</div>
 
 </details>
 
@@ -129,12 +131,12 @@ Proyek ini dikembangkan langsung melalui perangkat Android menggunakan [CodeAssi
 | **Appearance Styles** | Clean, Glossy, Neon, and Frosted styles with editable color profiles. | Gaya Clean, Glossy, Neon, dan Frosted dengan profil warna yang dapat diedit. |
 | **Position Studio** | Controls the position, movement, and rotation of each floating layer. | Mengatur posisi, pergerakan, dan rotasi setiap floating layer. |
 
-### 2. Visual Studio & Workflow | Studio Visual & Alur Kerja
+### 2. Visual Studio &amp; Workflow | Studio Visual &amp; Alur Kerja
 
 | Feature | &#127468;&#127463; English | &#127470;&#127465; Bahasa Indonesia |
 |---|---|---|
 | **Theme Studio** | Glossy, Custom, System, Dark, and Light interface themes. | Tema antarmuka Glossy, Custom, System, Dark, dan Light. |
-| **Floating Profiles & Layers** | Manage multiple independent layers and change their order. | Mengelola beberapa layer independen dan mengubah urutannya. |
+| **Floating Profiles &amp; Layers** | Manage multiple independent layers and change their order. | Mengelola beberapa layer independen dan mengubah urutannya. |
 | **Per-Slider Linking** | Link one supported parameter to multiple compatible layers, with mode-aware target selection. | Menghubungkan satu parameter ke beberapa layer yang kompatibel dengan pemeriksaan mode. |
 | **Copy To** | Copy supported profile or appearance settings to another layer. | Menyalin pengaturan profile atau tampilan yang didukung ke layer lain. |
 | **Scene Manager** | Save, load, update, rename, delete, import, and export floating scenes. | Menyimpan, memuat, memperbarui, mengganti nama, menghapus, mengimpor, dan mengekspor scene. |
@@ -147,7 +149,7 @@ Proyek ini dikembangkan langsung melalui perangkat Android menggunakan [CodeAssi
 | Feature | &#127468;&#127463; English | &#127470;&#127465; Bahasa Indonesia |
 |---|---|---|
 | **Adaptive EQ Bands** | Shows supported band layouts detected by the active backend, including 5-band or 10-band configurations where available. | Menampilkan susunan band yang terdeteksi pada backend aktif, termasuk konfigurasi 5-band atau 10-band jika tersedia. |
-| **Band Analyzer & Presets** | Reports detected band capabilities and filters built-in presets to matching band counts. | Menampilkan kemampuan band yang terdeteksi dan menyaring preset bawaan berdasarkan jumlah band yang sesuai. |
+| **Band Analyzer &amp; Presets** | Reports detected band capabilities and filters built-in presets to matching band counts. | Menampilkan kemampuan band yang terdeteksi dan menyaring preset bawaan berdasarkan jumlah band yang sesuai. |
 | **Band Editing** | Vertical faders, direct dB input, and individual band reset. | Fader vertikal, input dB langsung, dan reset setiap band. |
 | **Additional Effects** | Bass Boost, Virtualizer, and Limiter controls where supported by the device and backend. | Kontrol Bass Boost, Virtualizer, dan Limiter sesuai dukungan perangkat dan backend. |
 | **EQ Preset Import / Export** | Import and export supported EQ preset files. | Mengimpor dan mengekspor file preset EQ yang didukung. |
@@ -292,7 +294,7 @@ Equalizer Engine masih eksperimental dan bergantung pada perangkat. Jalur output
 
 <p align="center">
   <a href="mailto:rifki.work74@outlook.com">
-    <img src="https://img.shields.io/badge/Email-Contact%20Me-0078D4?style=for-the-badge&logo=microsoftoutlook&logoColor=white" alt="Contact by email">
+    <img src="https://img.shields.io/badge/Email-Contact%20Me-0078D4?style=for-the-badge&amp;logo=microsoftoutlook&amp;logoColor=white" alt="Contact by email">
   </a>
 </p>
 
