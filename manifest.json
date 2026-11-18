@@ -1,0 +1,29 @@
+{
+  "format": 1,
+  "kind": "project",
+  "name": "Floating-DJ-Visualizer-V3.0.18-Equalizer-Scroll-Rail-First-Open-Fix-and-README",
+  "description": "Floating-DJ-Visualizer-V3.0.18-Equalizer-Scroll-Rail-Outside-Glass-Fix",
+  "author": "C.o. Rifki Inc.",
+  "createdBy": "CodeAssist",
+  "exportedAt": 1794998522046,
+  "isAndroid": true,
+  "packageName": "com.floatingdj.visualizer",
+  "moduleCount": 1,
+  "modules": [
+    "app"
+  ],
+  "moduleInfos": [
+    {
+      "name": "app",
+      "path": "app",
+      "type": "android-app",
+      "files": 51,
+      "size": 1139124
+    }
+  ],
+  "fileCount": 62,
+  "uncompressedSize": 1262997,
+  "hasBundledDeps": true,
+  "iconEntry": null,
+  "store": null
+}

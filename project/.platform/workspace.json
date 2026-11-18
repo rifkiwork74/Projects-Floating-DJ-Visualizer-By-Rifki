@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "id": "Floating DJ Visualizer 3.0.16 · Theme Studio & Multi-Layer Slider Linking",
+      "name": "Floating-DJ-Visualizer-V3.0.18-Equalizer-Scroll-Rail-First-Open-Fix-and-README",
+      "root": "",
+      "buildSystem": "native",
+      "settings": {},
+      "modules": [
+        {
+          "id": "app",
+          "name": "app",
+          "dir": "app"
+        }
+      ],
+      "libraries": []
+    }
+  ]
+}
