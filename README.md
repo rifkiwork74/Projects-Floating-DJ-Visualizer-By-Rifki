@@ -71,21 +71,21 @@
     </td>
     <td align="center" width="33%">
       <a href="dokumentasi/dokumentasi-3.jpg"><img src="dokumentasi/dokumentasi-3.jpg" width="118" alt="Theme Studio and color profiles"></a><br>
-      <sub><strong>03 - Theme Studio</strong><br>Tema dan Warna</sub>
+      <sub><strong>03 - Pallet Studio Bar</strong><br>Pallet dan Warna</sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="33%">
       <a href="dokumentasi/dokumentasi-4.jpg"><img src="dokumentasi/dokumentasi-4.jpg" width="118" alt="Floating Scene Manager"></a><br>
-      <sub><strong>04 - Scene Manager</strong><br>Pengelola Scene</sub>
+      <sub><strong>04 - Equalizer Engine</strong><br>Pengelola Bands Equalizer</sub>
     </td>
     <td align="center" width="33%">
       <a href="dokumentasi/dokumentasi-5.jpg"><img src="dokumentasi/dokumentasi-5.jpg" width="118" alt="Equalizer modern engine"></a><br>
-      <sub><strong>05 - Equalizer Engine</strong><br>Mesin Equalizer</sub>
+      <sub><strong>05 - Component Equalizer Engine</strong><br>Mesin Bass bosst Equalizer</sub>
     </td>
     <td align="center" width="33%">
       <a href="dokumentasi/dokumentasi-6.jpg"><img src="dokumentasi/dokumentasi-6.jpg" width="118" alt="Audio effects and controls"></a><br>
-      <sub><strong>06 - Audio Controls</strong><br>Kontrol Audio</sub>
+      <sub><strong>06 - Preset Color 100 Pallet Bar</strong><br>Galery 100 Warna Bar </sub>
     </td>
   </tr>
 </table>
