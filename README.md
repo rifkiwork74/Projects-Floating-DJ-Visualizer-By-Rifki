@@ -1,211 +1,303 @@
 <div align="center">
+  <h1>Floating DJ Visualizer</h1>
+  <h3>Android Floating Audio Visualizer and Experimental Equalizer</h3>
+  <p><strong>Developed by Rifki</strong></p>
 
-  <h1>
-    <img src="https://img.icons8.com/ios-filled/50/2196F3/headphones.png" width="32" alt="Headphone" />
-    Floating DJ Visualizer
-  </h1>
+<p>
+  <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&amp;logo=android&amp;logoColor=white" alt="Android platform">
+  <img src="https://img.shields.io/badge/Language-Kotlin-7F52FF?style=for-the-badge&amp;logo=kotlin&amp;logoColor=white" alt="Kotlin language">
+  <img src="https://img.shields.io/badge/Version-v3.0.18-2196F3?style=for-the-badge" alt="Version 3.0.18">
+  <a href="https://github.com/tyron12233/CodeAssist">
+    <img src="https://img.shields.io/badge/IDE-CodeAssist-292929?style=for-the-badge&amp;logo=github&amp;logoColor=white" alt="CodeAssist IDE">
+  </a>
+</p>
 
-  <h3>Android Audio Visualizer & Experimental Equalizer 路 By Rifki</h3>
+<p><strong>Visualize your sound. Customize every layer.</strong></p>
 
-  <p><i>Visualize your sound. Customize every layer.</i></p>
+<p><strong>EN:</strong> A customizable floating audio visualizer with layered profiles, reusable scenes, Theme Studio, and an experimental device-dependent Equalizer Engine.</p>
+<p><strong>ID:</strong> Aplikasi floating audio visualizer yang dapat dikustomisasi dengan profile berlapis, scene yang dapat digunakan kembali, Theme Studio, dan Equalizer Engine eksperimental yang bergantung pada perangkat.</p>
 
-  <p>
-    <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android">
-    <img src="https://img.shields.io/badge/Language-Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin">
-    <img src="https://img.shields.io/badge/Version-v3.0.18-2196F3?style=for-the-badge" alt="Version">
-    <a href="https://github.com/tyron12233/CodeAssist" target="_blank" rel="noreferrer">
-      <img src="https://img.shields.io/badge/Built%20With-CodeAssist-292929?style=for-the-badge&logo=github&logoColor=white" alt="Built with CodeAssist">
-    </a>
-  </p>
-
-  <p><b>EN:</b> A customizable Android floating audio visualizer with layered profiles, scene management, Theme Studio, and an experimental device-dependent Equalizer Engine.</p>
-  <p><b>ID:</b> Visualizer audio floating Android yang dapat dikustomisasi dengan multi-layer profile, pengelolaan scene, Theme Studio, dan Equalizer Engine eksperimental yang bergantung pada perangkat.</p>
-
-  <p>
-    <a href="#preview-aplikasi--app-preview">Preview</a> 路
-    <a href="#fitur-utama--key-features">Features</a> 路
-    <a href="#teknologi--tech-stack">Tech Stack</a> 路
-    <a href="#kompatibilitas--compatibility">Compatibility</a> 路
-    <a href="#riwayat-perubahan--changelog">Changelog</a> 路
-    <a href="#kontak--contact">Contact</a>
-  </p>
+<p><a href="#app-preview">Preview</a> | <a href="#features">Features</a> | <a href="#audio-processing-notes">Audio Notes</a> | <a href="#compatibility">Compatibility</a> | <a href="#changelog">Changelog</a> | <a href="#contact">Contact</a></p>
 
 </div>
 
 ---
 
-## 馃搼 Daftar Isi | Table of Contents
+## Table of Contents
 
-- [Preview Aplikasi | App Preview](#preview-aplikasi--app-preview)
-- [Tentang Proyek | About](#tentang-proyek--about)
-- [Fitur Utama | Key Features](#fitur-utama--key-features)
-- [Preset Uji Coba | Test Presets](#preset-uji-coba--test-presets)
-- [Teknologi | Tech Stack](#teknologi--tech-stack)
-- [Kompatibilitas | Compatibility](#kompatibilitas--compatibility)
-- [Catatan Audio | Audio Notes](#catatan-audio--audio-notes)
-- [Riwayat Perubahan | Changelog](#riwayat-perubahan--changelog)
-- [Kontak | Contact](#kontak--contact)
+- [App Preview](#app-preview)
+- [About the Project](#about-the-project)
+- [Key Features](#features)
+- [Test Presets](#test-presets)
+- [Technology Stack](#technology-stack)
+- [Compatibility](#compatibility)
+- [Audio Processing Notes](#audio-processing-notes)
+- [Changelog: V3.0.10 to V3.0.18](#changelog)
+- [Contact](#contact)
 
 ---
 
-<a id="preview-aplikasi--app-preview"></a>
+<a id="app-preview"></a>
 
-## 馃摳 Preview Aplikasi | App Preview
+## App Preview
 
-<table align="center">
+<table>
   <tr>
-    <td align="center"><img src="dokumentasi/dokumentasi-1.jpg" width="220" alt="Main visualizer preview" /></td>
-    <td align="center"><img src="dokumentasi/dokumentasi-2.jpg" width="220" alt="Floating profile preview" /></td>
-    <td align="center"><img src="dokumentasi/dokumentasi-3.jpg" width="220" alt="Studio pallet bar" /></td>
+    <td width="50%"><img src="dokumentasi/dokumentasi-1.jpg" width="100%" alt="Main visualizer screen"></td>
+    <td width="50%"><img src="dokumentasi/dokumentasi-2.jpg" width="100%" alt="Floating profile screen"></td>
   </tr>
   <tr>
-    <td align="center"><img src="dokumentasi/dokumentasi-4.jpg" width="220" alt="Main Equalizer preview" /></td>
-    <td align="center"><img src="dokumentasi/dokumentasi-5.jpg" width="220" alt="Component Equalizer preview" /></td>
-    <td align="center"><img src="dokumentasi/dokumentasi-6.jpg" width="220" alt="Preset Studio Pallet Bar" /></td>
+    <td width="50%"><img src="dokumentasi/dikumentasi-3.jpg" width="100%" alt="Theme Studio screen"></td>
+    <td width="50%"><img src="dokumentasi/dokumentasi-4.jpg" width="100%" alt="Scene Manager screen"></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="dokumentasi/dokumentasi-5.jpg" width="100%" alt="Equalizer screen"></td>
+    <td width="50%"><img src="dokumentasi/dokumentasi-6.jpg" width="100%" alt="Audio controls screen"></td>
   </tr>
 </table>
 
-<p align="center"><i>EN: More screenshots are available in <a href="dokumentasi/">dokumentasi/</a>. 路 ID: Kumpulan tangkapan layar lainnya tersedia di folder <a href="dokumentasi/">dokumentasi/</a>.</i></p>
+EN: More screenshots are available in the [`dokumentasi/`](dokumentasi/) folder.
+
+ID: Kumpulan tangkapan layar lainnya tersedia di folder [`dokumentasi/`](dokumentasi/).
 
 ---
 
-<a id="tentang-proyek--about"></a>
+<a id="about-the-project"></a>
 
-## 馃摉 Tentang Proyek | About the Project
+## About the Project
 
-**EN** 鈥� Floating DJ Visualizer is an Android application developed by **Rifki**. It began as a floating audio visualizer and has grown into a layered visual workspace with real-time controls, reusable scenes, detailed appearance settings, and an additional experimental Equalizer Engine. The project is developed directly on an Android device using the open-source [CodeAssist IDE](https://github.com/tyron12233/CodeAssist).
+**EN**
 
-**ID** 鈥� Floating DJ Visualizer adalah aplikasi Android yang dikembangkan oleh **Rifki**. Berawal dari floating audio visualizer, proyek ini berkembang menjadi workspace visual multi-layer dengan kontrol real-time, scene yang dapat digunakan kembali, pengaturan tampilan mendalam, dan Equalizer Engine eksperimental. Pengembangan dilakukan langsung melalui perangkat Android menggunakan IDE open-source [CodeAssist](https://github.com/tyron12233/CodeAssist).
+Floating DJ Visualizer is an Android application developed by **Rifki**. It started as a floating audio visualizer and has grown into a visual workspace for real-time audio-reactive displays. The app includes independent floating profiles, layer controls, reusable scenes, detailed appearance settings, and an additional experimental Equalizer Engine.
 
-> **Project status / Status proyek:** V3.0.18 is the current development line. The Equalizer Engine remains experimental and device-dependent. / V3.0.18 adalah lini pengembangan saat ini. Equalizer Engine masih bersifat eksperimental dan bergantung pada perangkat.
+The project is developed directly on an Android device using the open-source [CodeAssist IDE](https://github.com/tyron12233/CodeAssist).
 
----
+**ID**
 
-<a id="fitur-utama--key-features"></a>
+Floating DJ Visualizer adalah aplikasi Android yang dikembangkan oleh **Rifki**. Proyek ini bermula sebagai floating audio visualizer dan berkembang menjadi workspace visual yang merespons audio secara real-time. Aplikasi ini menyediakan floating profile independen, kontrol layer, scene yang dapat digunakan kembali, pengaturan tampilan mendalam, serta Equalizer Engine tambahan yang masih eksperimental.
 
-## 鉁� Fitur Utama | Key Features
+Proyek ini dikembangkan langsung melalui perangkat Android menggunakan [CodeAssist IDE](https://github.com/tyron12233/CodeAssist) yang bersifat open-source.
 
-### 馃幍 Audio Visualization
-
-| Feature | English | Bahasa Indonesia |
-|---|---|---|
-| **Floating Overlay** | Displays the visualizer above other apps when overlay permission is granted. | Menampilkan visualizer di atas aplikasi lain setelah izin overlay diberikan. |
-| **Visualizer Modes** | Supports Single and Horizontal / DJ layouts. | Mendukung layout Single dan Horizontal / DJ. |
-| **Bar Controls** | Adjust bar count, width, height, thickness, gap, scale, opacity, glow, and corner shape where applicable. | Mengatur jumlah bar, lebar, tinggi, ketebalan, jarak, skala, opacity, glow, dan sudut bar sesuai mode. |
-| **Live Frequency** | Displays frequency ranges and levels for the selected visualization mode. | Menampilkan rentang frekuensi dan level sesuai mode visualizer yang dipilih. |
-| **Appearance** | Clean, Glossy, Neon, and Frosted styles with editable color profiles. | Gaya Clean, Glossy, Neon, dan Frosted dengan color profile yang dapat diedit. |
-| **Position Studio** | Configure overlay position, movement, and rotation per layer. | Mengatur posisi, pergerakan, dan rotasi overlay pada setiap layer. |
-
-### 馃帹 Visual Studio & Workflow
-
-| Feature | English | Bahasa Indonesia |
-|---|---|---|
-| **Theme Studio** | Glossy, Custom, System, Dark, and Light interface themes. | Tema antarmuka Glossy, Custom, System, Dark, dan Light. |
-| **Floating Profiles & Layers** | Keep multiple independent layer configurations and reorder them. | Menyimpan beberapa konfigurasi layer secara independen dan mengubah urutannya. |
-| **Per-Slider Linking** | Link one supported parameter from a source layer to multiple compatible target layers. | Menghubungkan satu parameter dari layer sumber ke beberapa layer tujuan yang kompatibel. |
-| **Copy To** | Copy the supported appearance/profile settings to another layer. | Menyalin pengaturan tampilan/profile yang didukung ke layer lain. |
-| **Scene Manager** | Save, load, rename, update, delete, import, and export complete floating scenes. | Menyimpan, memuat, mengganti nama, memperbarui, menghapus, mengimpor, dan mengekspor scene floating. |
-| **Reversible Value Preview** | Preview numeric slider changes live; commit or roll back before saving. | Melihat preview perubahan angka secara langsung; simpan atau batalkan sebelum commit. |
-| **General Backup** | Export supported app settings and profiles with validation and an import review. Runtime permissions and engines are not transferred or auto-started. | Mengekspor pengaturan dan profile yang didukung dengan validasi dan ringkasan impor. Izin runtime dan engine tidak dipindahkan atau otomatis dijalankan. |
-| **Notification Controls** | Theme-aware notification controls for supported visualizer and EQ actions. | Kontrol notifikasi yang mengikuti tema untuk fungsi visualizer dan EQ yang didukung. |
-
-### 馃帤锔� Experimental Equalizer Engine
-
-| Feature | English | Bahasa Indonesia |
-|---|---|---|
-| **5 / 10-Band EQ** | Band controls follow the active backend's detected band layout. | Kontrol band mengikuti susunan band yang terdeteksi pada backend aktif. |
-| **Band Analyzer** | Reports the active/detected band count; preset lists are filtered by matching band count. | Menampilkan jumlah band aktif/terdeteksi; daftar preset disaring berdasarkan jumlah band yang sesuai. |
-| **EQ Presets** | Includes starter 5-band and 10-band curves, plus user-managed presets. | Menyediakan kurva awal 5-band dan 10-band, serta preset buatan pengguna. |
-| **Band Editing** | Vertical faders, direct dB input, and individual band reset. | Fader vertikal, input nilai dB langsung, dan reset tiap band. |
-| **Additional Effects** | Bass Boost, Virtualizer, and Limiter where supported by the device/backend. | Bass Boost, Virtualizer, dan Limiter sesuai dukungan perangkat/backend. |
-| **Preamp / Reverb** | Restricted or unavailable on the current output-mix route where safe attachment/control cannot be guaranteed. | Dibatasi atau tidak tersedia pada jalur output-mix saat ini jika attachment/kontrol yang aman tidak dapat dijamin. |
-| **EQ Preset Exchange** | Import and export supported EQ preset files. | Mengimpor dan mengekspor file preset EQ yang didukung. |
+> **Project status / Status proyek:** V3.0.18 is the current development line. The Equalizer Engine remains experimental and device-dependent. / V3.0.18 adalah lini pengembangan saat ini. Equalizer Engine masih eksperimental dan bergantung pada perangkat.
 
 ---
 
-<a id="preset-uji-coba--test-presets"></a>
+<a id="features"></a>
 
-## 馃帹 Preset Uji Coba | Test Presets
+## Key Features
 
-**EN:** Example configurations from development and testing may be provided in [`Test - Preset/`](Test%20-%20Preset/). Import only files compatible with your app version and review the settings before applying them.
+### 1. Audio Visualization
 
-**ID:** Contoh konfigurasi dari proses pengembangan dan pengujian dapat tersedia di folder [`Test - Preset/`](Test%20-%20Preset/). Impor hanya file yang kompatibel dengan versi aplikasi dan periksa pengaturannya sebelum diterapkan.
+- **Floating Overlay**  
+  EN: Displays the visualizer above other apps after the user grants Android overlay permission.  
+  ID: Menampilkan visualizer di atas aplikasi lain setelah pengguna memberikan izin overlay Android.
+
+- **Visualizer Modes**  
+  EN: Supports Single and Horizontal / DJ visualization layouts.  
+  ID: Mendukung layout visualisasi Single dan Horizontal / DJ.
+
+- **Bar Controls**  
+  EN: Configure bar count, width, height, thickness, gap, scale, opacity, glow, and corner shape where supported by the selected mode.  
+  ID: Mengatur jumlah bar, lebar, tinggi, ketebalan, jarak, skala, opacity, glow, dan bentuk sudut sesuai mode yang dipilih.
+
+- **Frequency Display**  
+  EN: Shows frequency ranges and activity levels for the selected visualization mode.  
+  ID: Menampilkan rentang frekuensi dan level aktivitas sesuai mode visualisasi yang dipilih.
+
+- **Appearance Styles**  
+  EN: Includes Clean, Glossy, Neon, and Frosted styles with editable color profiles.  
+  ID: Menyediakan gaya Clean, Glossy, Neon, dan Frosted dengan color profile yang dapat diedit.
+
+- **Position Studio**  
+  EN: Configure the position, movement, and rotation of each floating layer.  
+  ID: Mengatur posisi, pergerakan, dan rotasi setiap floating layer.
+
+### 2. Visual Studio and Workflow
+
+- **Theme Studio**  
+  EN: Provides Glossy, Custom, System, Dark, and Light interface themes.  
+  ID: Menyediakan tema antarmuka Glossy, Custom, System, Dark, dan Light.
+
+- **Floating Profiles and Layers**  
+  EN: Maintain multiple independent visualizer layers and reorder them.  
+  ID: Mengelola beberapa layer visualizer secara independen dan mengubah urutannya.
+
+- **Per-Slider Linking**  
+  EN: Link one supported parameter from a source layer to multiple compatible target layers. Compatibility is checked against each layer's visualization mode.  
+  ID: Menghubungkan satu parameter dari layer sumber ke beberapa layer tujuan yang kompatibel. Kesesuaian diperiksa berdasarkan mode visualisasi setiap layer.
+
+- **Copy To**  
+  EN: Copy supported profile or appearance settings to another layer.  
+  ID: Menyalin pengaturan profile atau tampilan yang didukung ke layer lain.
+
+- **Floating Scene Manager**  
+  EN: Save, load, update, rename, delete, import, and export complete floating scenes.  
+  ID: Menyimpan, memuat, memperbarui, mengganti nama, menghapus, mengimpor, dan mengekspor scene floating secara lengkap.
+
+- **Reversible Numeric Preview**  
+  EN: Preview slider and numeric changes in real time, then commit or cancel them.  
+  ID: Melihat preview perubahan slider dan angka secara real-time, kemudian menyimpan atau membatalkannya.
+
+- **General Import and Export**  
+  EN: Back up supported settings, profiles, scenes, and EQ data with validation and an import review. Runtime permissions and active engines are not transferred or automatically started.  
+  ID: Mencadangkan pengaturan, profile, scene, dan data EQ yang didukung dengan validasi serta ringkasan impor. Izin runtime dan engine aktif tidak dipindahkan atau dijalankan otomatis.
+
+- **Notification Controls**  
+  EN: Provides theme-aware notification controls for supported visualizer and EQ actions.  
+  ID: Menyediakan kontrol notifikasi yang mengikuti tema untuk fungsi visualizer dan EQ yang didukung.
+
+### 3. Experimental Equalizer Engine
+
+- **Adaptive EQ Bands**  
+  EN: Provides band controls according to the active backend's detected layout, including supported 5-band or 10-band configurations.  
+  ID: Menyediakan kontrol band sesuai susunan yang terdeteksi pada backend aktif, termasuk konfigurasi 5-band atau 10-band yang didukung.
+
+- **Band Analyzer and Presets**  
+  EN: Reports the detected band layout and filters built-in presets to matching band counts. User presets are managed separately.  
+  ID: Menampilkan susunan band yang terdeteksi dan menyaring preset bawaan berdasarkan jumlah band yang sesuai. Preset pengguna dikelola secara terpisah.
+
+- **Band Editing**  
+  EN: Includes vertical faders, direct dB value input, and individual band reset.  
+  ID: Menyediakan fader vertikal, input nilai dB langsung, dan reset untuk setiap band.
+
+- **Additional Audio Effects**  
+  EN: Bass Boost, Virtualizer, and Limiter controls are available where supported by the device and active backend.  
+  ID: Kontrol Bass Boost, Virtualizer, dan Limiter tersedia sesuai dukungan perangkat dan backend aktif.
+
+- **EQ Preset Import and Export**  
+  EN: Import and export supported EQ preset files.  
+  ID: Mengimpor dan mengekspor file preset EQ yang didukung.
 
 ---
 
-<a id="teknologi--tech-stack"></a>
+<a id="test-presets"></a>
 
-## 馃洜锔� Teknologi | Tech Stack
+## Test Presets
 
-| Component | Technology / Teknologi |
+EN: Example configurations from development and testing may be available in [`Test - Preset/`](Test%20-%20Preset/). Use files compatible with your app version and review their contents before applying them.
+
+ID: Contoh konfigurasi dari proses pengembangan dan pengujian dapat tersedia di folder [`Test - Preset/`](Test%20-%20Preset/). Gunakan file yang kompatibel dengan versi aplikasi dan periksa isinya sebelum diterapkan.
+
+---
+
+<a id="technology-stack"></a>
+
+## Technology Stack
+
+| Component | Technology |
 |---|---|
-| **Platform** | Android |
-| **Language** | Kotlin |
-| **IDE** | [CodeAssist](https://github.com/tyron12233/CodeAssist) 鈥� on-device Android IDE / IDE Android langsung di perangkat |
-| **UI** | Android Views |
-| **Visualization** | Android `Visualizer` API and optional MediaProjection PCM analysis / Android `Visualizer` API dan analisis PCM MediaProjection opsional |
-| **EQ** | Android audio effects and `DynamicsProcessing` where supported / Audio effect Android dan `DynamicsProcessing` sesuai dukungan perangkat |
-| **Build** | Gradle / Android Build Tools |
+| Platform | Android |
+| Main language | Kotlin |
+| Development IDE | [CodeAssist](https://github.com/tyron12233/CodeAssist) |
+| UI framework | Android Views |
+| Audio visualization | Android `Visualizer` API and optional MediaProjection PCM analysis |
+| Equalizer | Android audio effects and `DynamicsProcessing` where supported |
+| Build tools | Gradle and Android Build Tools |
 
 ---
 
-<a id="kompatibilitas--compatibility"></a>
+<a id="compatibility"></a>
 
-## 馃摫 Kompatibilitas | Compatibility
+## Compatibility
 
-| Item | Configuration / Konfigurasi |
+| Item | Configuration |
 |---|---|
-| **Minimum Android** | Android 8.0 路 API 26 |
-| **Target SDK** | API 36 |
-| **Device** | Android phones and compatible devices / Ponsel Android dan perangkat yang kompatibel |
-| **Overlay** | Requires the user's Android "Display over other apps" permission / Memerlukan izin Android "Tampilkan di atas aplikasi lain" |
-| **Audio Effects** | Availability and control vary by device, ROM, player, and active audio route / Ketersediaan dan kontrol bergantung pada perangkat, ROM, player, dan jalur audio aktif |
+| Minimum Android | Android 8.0 (API 26) |
+| Target SDK | API 36 |
+| Device | Android phones and compatible devices |
+| Floating Overlay | Requires the user's Android "Display over other apps" permission |
+| Audio effects | Availability and control vary by device, ROM, player, and active audio route |
 
 ---
 
-<a id="catatan-audio--audio-notes"></a>
+<a id="audio-processing-notes"></a>
 
-## 鈿狅笍 Catatan Audio | Audio Processing Notes
+## Audio Processing Notes
 
-**EN:** The Equalizer Engine currently uses an experimental Android output-mix audio-effect route. Android versions, OEM audio stacks, effect ownership, and active audio routes can affect availability and behavior. A detected effect does not guarantee that every app or every audio route is processed. Some effects require a compatible player-owned audio session. The app does not claim to be a universal system-wide mixer.
+**EN**
 
-**ID:** Equalizer Engine saat ini menggunakan jalur audio effect output-mix Android yang masih eksperimental. Versi Android, audio stack OEM, kepemilikan effect, dan jalur audio aktif dapat memengaruhi ketersediaan serta perilakunya. Efek yang terdeteksi tidak menjamin seluruh aplikasi atau seluruh jalur audio diproses. Beberapa efek memerlukan audio session milik player yang kompatibel. Aplikasi ini tidak mengklaim sebagai mixer universal untuk seluruh audio sistem.
+The Equalizer Engine is experimental and device-dependent. The current Android output-mix route is not a universal per-player or system-wide mixer. Effect availability, band count, and control behavior may vary by Android version, manufacturer implementation, and active audio route. Detecting an effect does not guarantee that every application or audio route is processed. Some effects require a compatible player-owned audio session.
 
-Preamp is intentionally restricted on the current output-mix route for output safety. / Preamp sengaja dibatasi pada jalur output-mix saat ini demi keamanan level output.
+Preamp control is restricted on the current output-mix route for output safety.
 
----
+**ID**
 
-<a id="riwayat-perubahan--changelog"></a>
+Equalizer Engine masih eksperimental dan bergantung pada perangkat. Jalur output-mix Android saat ini bukan mixer universal per-player atau mixer untuk seluruh sistem. Ketersediaan efek, jumlah band, dan perilaku kontrol dapat berbeda menurut versi Android, implementasi produsen, serta jalur audio aktif. Efek yang terdeteksi tidak menjamin seluruh aplikasi atau jalur audio ikut diproses. Beberapa efek memerlukan audio session milik player yang kompatibel.
 
-## 馃摑 Riwayat Perubahan | Changelog (V3.0.10鈥揤3.0.18)
-
-| Version | English 鈥� Highlights | Indonesia 鈥� Ringkasan |
-|---|---|---|
-| **3.0.10** | Added output-safety protection for Preamp on the experimental output-mix route; refined effect switches and profile scrolling. | Menambahkan perlindungan Preamp pada jalur output-mix eksperimental; merapikan switch efek dan scrolling profile. |
-| **3.0.11** | Refined EQ effect controls, added profile drag auto-scroll and a glass profile scroll indicator, and improved Display Live fit. | Merapikan kontrol efek EQ, menambahkan auto-scroll saat drag profile dan indikator glass, serta memperbaiki tampilan Display Live. |
-| **3.0.12** | Reorganized EQ effects, clarified restricted controls, and polished theme-aware switches and screen motion. | Menata ulang efek EQ, memperjelas kontrol yang dibatasi, serta menyempurnakan switch bertema dan animasi layar. |
-| **3.0.13** | Added visible Play/Pause switch glyphs and a staggered EQ preset dropdown animation. | Menambahkan ikon Play/Pause yang terlihat pada switch dan animasi dropdown preset EQ bertahap. |
-| **3.0.14** | Corrected FFT decoding and responsiveness, improved theme palette isolation and numeric previews, and strengthened notification cold-start restoration. | Memperbaiki decoding FFT dan responsivitas, isolasi palet tema dan preview angka, serta pemulihan notifikasi saat service dimulai ulang. |
-| **3.0.15** | Added reversible live numeric previews, fixed Theme Studio repaint issues, refined numeric dialogs, and added scene Save To. | Menambahkan preview angka real-time yang dapat dibatalkan, memperbaiki repaint Theme Studio, merapikan dialog angka, dan menambahkan Scene Save To. |
-| **3.0.16** | Added per-slider multi-layer linking, mode-aware target validation, global FFT/Hop labels, synchronized notification Start/Stop, and theme-aware notification pills. | Menambahkan Linked multi-layer per slider, validasi mode target, label FFT/Hop global, sinkronisasi Start/Stop notifikasi, dan pill notifikasi yang mengikuti tema. |
-| **3.0.17** | Improved import/export validation and runtime-permission review; refined scene status, position controls, and mode-safe linking. | Memperkuat validasi import/export dan pemeriksaan izin runtime; merapikan status scene, kontrol posisi, dan Linked berdasarkan mode. |
-| **3.0.18** | Added band-aware 5/10-band EQ presets, Band Analyzer, theme-aware toasts, UI motion and scroll-gutter refinements, plus Equalizer first-open rail visibility correction. | Menambahkan preset EQ sesuai jumlah band, Band Analyzer, toast bertema, animasi dan penyempurnaan gutter scroll, serta perbaikan indikator Equalizer agar terlihat sejak pertama dibuka. |
-
-For detailed implementation notes, see [`CHANGELOG.md`](CHANGELOG.md) and the research documents in [`docs/`](docs/). / Untuk catatan implementasi terperinci, lihat [`CHANGELOG.md`](CHANGELOG.md) dan dokumen riset di folder [`docs/`](docs/).
+Kontrol Preamp dibatasi pada jalur output-mix saat ini demi keamanan level output.
 
 ---
 
-<a id="kontak--contact"></a>
+<a id="changelog"></a>
 
-## 馃摤 Kontak | Contact
+## Changelog: V3.0.10 to V3.0.18
 
-**EN:** Feedback, bug reports, ideas, and collaboration are welcome.  
-**ID:** Masukan, laporan bug, ide pengembangan, dan kolaborasi dipersilakan.
+The following is a short milestone summary. For detailed implementation notes, see [`CHANGELOG.md`](CHANGELOG.md) and the research files in [`docs/`](docs/).
+
+Berikut ringkasan milestone. Untuk catatan implementasi yang lebih terperinci, lihat [`CHANGELOG.md`](CHANGELOG.md) dan dokumen riset di folder [`docs/`](docs/).
+
+### V3.0.18
+
+- **EN:** Expanded the 5-band and 10-band EQ preset library with capability-based filtering and a Band Analyzer. Refined Display geometry, scroll gutters, theme-aware toasts, dialog/list motion, and Equalizer first-open scroll rail behavior.
+- **ID:** Memperluas pustaka preset EQ 5-band dan 10-band dengan penyaringan berdasarkan kemampuan backend serta Band Analyzer. Merapikan geometri Display, gutter scrolling, toast bertema, animasi dialog/daftar, dan indikator scroll Equalizer saat pertama dibuka.
+
+### V3.0.17
+
+- **EN:** Improved general backup/import validation and runtime-permission review. Refined scene status, layer-position controls, and mode-safe parameter linking.
+- **ID:** Memperkuat validasi backup/impor umum dan pemeriksaan izin runtime. Merapikan status scene, kontrol posisi layer, dan Linked parameter yang sesuai mode.
+
+### V3.0.16
+
+- **EN:** Introduced multi-layer per-slider linking with mode-aware target selection. Added global FFT/Hop explanations and synchronized Start/Stop notification controls with Theme Studio contrast.
+- **ID:** Memperkenalkan Linked multi-layer per slider dengan pemilihan target sesuai mode. Menambahkan penjelasan FFT/Hop global serta sinkronisasi kontrol Start/Stop notifikasi dengan kontras Theme Studio.
+
+### V3.0.15
+
+- **EN:** Added reversible live numeric previews, corrected Theme Studio repaint behavior, refined numeric dialogs, and added Scene Save To.
+- **ID:** Menambahkan preview angka real-time yang dapat dibatalkan, memperbaiki repaint Theme Studio, merapikan dialog numerik, dan menambahkan Scene Save To.
+
+### V3.0.14
+
+- **EN:** Corrected FFT decoding and responsiveness, refined frequency-range selection and diagnostics, improved Theme Studio color handling, and strengthened notification cold-start restoration.
+- **ID:** Memperbaiki decoding FFT dan responsivitas, merapikan pemilihan rentang frekuensi dan diagnostik, meningkatkan pengelolaan warna Theme Studio, serta memperkuat pemulihan notifikasi saat cold-start.
+
+### V3.0.13
+
+- **EN:** Added visible Play/Pause glyphs to theme-aware switches and refined the EQ preset dropdown animation.
+- **ID:** Menambahkan ikon Play/Pause yang terlihat pada switch bertema dan merapikan animasi dropdown preset EQ.
+
+### V3.0.12
+
+- **EN:** Reorganized EQ effect groups, clarified restricted Preamp/Reverb behavior, and refined theme-aware controls and screen motion.
+- **ID:** Menata ulang kelompok efek EQ, memperjelas pembatasan Preamp/Reverb, serta merapikan kontrol bertema dan animasi layar.
+
+### V3.0.11
+
+- **EN:** Refined EQ effect controls, added Floating Profile drag auto-scroll and glass scroll feedback, and improved Display Live fit.
+- **ID:** Merapikan kontrol efek EQ, menambahkan auto-scroll saat Floating Profile digeser dan indikator scroll glass, serta meningkatkan penyesuaian Display Live.
+
+### V3.0.10
+
+- **EN:** Added output-safety protection for the experimental EQ output-mix route and refined effect switches and profile scrolling.
+- **ID:** Menambahkan perlindungan keamanan output pada jalur EQ output-mix eksperimental serta merapikan switch efek dan scrolling profile.
+
+---
+
+<a id="contact"></a>
+
+## Contact
+
+EN: Feedback, bug reports, suggestions, and collaboration inquiries are welcome.
+
+ID: Masukan, laporan bug, saran, dan pertanyaan kolaborasi dipersilakan.
 
 <p align="center">
   <a href="mailto:rifki.work74@outlook.com">
-    <img src="https://img.shields.io/badge/Email-Contact%20Me-0078D4?style=for-the-badge&logo=microsoftoutlook&logoColor=white" alt="Contact via email">
+    <img src="https://img.shields.io/badge/Email-Contact%20Me-0078D4?style=for-the-badge&amp;logo=microsoftoutlook&amp;logoColor=white" alt="Contact by email">
   </a>
 </p>
 
-<p align="center"><b>Made with passion by Rifki</b> 馃帶<br><i>Floating DJ Visualizer 鈥� Visualize Your Sound.</i></p>
+<p align="center">
+  <strong>Made with passion by Rifki</strong><br>
+  <em>Floating DJ Visualizer - Visualize Your Sound.</em>
+</p>
