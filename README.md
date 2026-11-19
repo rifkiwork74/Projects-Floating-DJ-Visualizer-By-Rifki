@@ -45,7 +45,7 @@
 - [Technology Stack | Teknologi](#technology-stack)
 - [Compatibility | Kompatibilitas](#compatibility)
 - [Audio Processing Notes | Catatan Audio](#audio-processing-notes)
-- [Changelog V3.0.10-V3.0.18](#changelog)
+- [Development History & Changelog](#changelog)
 - [Contact | Kontak](#contact)
 
 ---
@@ -60,38 +60,58 @@
 <p align="center"><sub>Tap a thumbnail to view the full-size image. / Ketuk thumbnail untuk melihat gambar ukuran penuh.</sub></p>
 
 <div align="center">
+
+<!-- Row 1: each row is a separate one-row table so GitHub does not zebra-stripe the gallery cards. -->
 <table align="center">
   <tr>
     <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-1.jpg"><img src="dokumentasi/dokumentasi-1.jpg" width="118" alt="Main application dashboard"></a><br>
-      <sub><strong>01 - Main Dashboard</strong><br>Halaman Utama</sub>
+      <a href="dokumentasi/dokumentasi-1.jpg"><img src="dokumentasi/dokumentasi-1.jpg" width="132" alt="Main application dashboard"></a>
+      <br><strong>01 · Main Dashboard</strong>
+      <br><sub>Halaman Utama</sub>
+      <br><sub>EN: App overview and main controls.</sub><br><sub>ID: Ringkasan aplikasi dan kontrol utama.</sub>
     </td>
     <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-2.jpg"><img src="dokumentasi/dokumentasi-2.jpg" width="118" alt="Floating profiles and layers"></a><br>
-      <sub><strong>02 - Floating Profiles</strong><br>Profile dan Layer</sub>
+      <a href="dokumentasi/dokumentasi-2.jpg"><img src="dokumentasi/dokumentasi-2.jpg" width="132" alt="Floating profiles and layers"></a>
+      <br><strong>02 · Floating Profiles</strong>
+      <br><sub>Profile dan Layer</sub>
+      <br><sub>EN: Manage independent visualizer profiles and layers.</sub><br><sub>ID: Kelola profile dan layer visualizer secara terpisah.</sub>
     </td>
     <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-3.jpg"><img src="dokumentasi/dokumentasi-3.jpg" width="118" alt="Palette Studio with bar color profiles"></a><br>
-      <sub><strong>03 - Bar Palette Studio</strong><br>Studio Palet Warna Bar</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-4.jpg"><img src="dokumentasi/dokumentasi-4.jpg" width="118" alt="Equalizer bands interface"></a><br>
-      <sub><strong>04 - Equalizer Bands</strong><br>Band Equalizer</sub>
-    </td>
-    <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-5.jpg"><img src="dokumentasi/dokumentasi-5.jpg" width="118" alt="Equalizer components and audio effects"></a><br>
-      <sub><strong>05 - Equalizer Components</strong><br>Komponen Equalizer dan Efek Audio</sub>
-    </td>
-    <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-6.jpg"><img src="dokumentasi/dokumentasi-6.jpg" width="118" alt="100-color bar palette gallery"></a><br>
-      <sub><strong>06 - 100 Bar Color Palettes</strong><br>Galeri 100 Palet Warna Bar</sub>
+      <a href="dokumentasi/dokumentasi-3.jpg"><img src="dokumentasi/dokumentasi-3.jpg" width="132" alt="Bar Palette Studio"></a>
+      <br><strong>03 · Bar Palette Studio</strong>
+      <br><sub>Studio Palet Warna Bar</sub>
+      <br><sub>EN: Customize colors and preview palette choices.</sub><br><sub>ID: Atur warna dan lihat pratinjau pilihan palet.</sub>
     </td>
   </tr>
 </table>
-</div>
 
+<br>
+
+<!-- Row 2 uses the same one-row table structure and alignment as row 1. -->
+<table align="center">
+  <tr>
+    <td align="center" width="33%">
+      <a href="dokumentasi/dokumentasi-4.jpg"><img src="dokumentasi/dokumentasi-4.jpg" width="132" alt="Equalizer bands interface"></a>
+      <br><strong>04 · Equalizer Bands</strong>
+      <br><sub>Band Equalizer</sub>
+      <br><sub>EN: Explore the frequency-band controls.</sub><br><sub>ID: Jelajahi kontrol setiap pita frekuensi.</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="dokumentasi/dokumentasi-5.jpg"><img src="dokumentasi/dokumentasi-5.jpg" width="132" alt="Equalizer components and audio effects"></a>
+      <br><strong>05 · Equalizer Components</strong>
+      <br><sub>Komponen Equalizer dan Efek Audio</sub>
+      <br><sub>EN: Review available EQ and audio-effect controls.</sub><br><sub>ID: Lihat kontrol EQ dan efek audio yang tersedia.</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="dokumentasi/dokumentasi-6.jpg"><img src="dokumentasi/dokumentasi-6.jpg" width="132" alt="100 bar color palettes"></a>
+      <br><strong>06 · 100 Bar Color Palettes</strong>
+      <br><sub>Galeri 100 Palet Warna Bar</sub>
+      <br><sub>EN: Browse the built-in collection of color palettes.</sub><br><sub>ID: Jelajahi koleksi palet warna bawaan.</sub>
+    </td>
+  </tr>
+</table>
+
+</div>
 </details>
 
 <p align="center">
@@ -206,83 +226,302 @@ Equalizer Engine masih eksperimental dan bergantung pada perangkat. Jalur output
 
 ---
 
-## Changelog | Riwayat Perubahan V3.0.10-V3.0.18
+<a id="changelog"></a>
 
-**&#127468;&#127463; English:** A concise milestone history. For detailed implementation notes, see [`CHANGELOG.md`](CHANGELOG.md) and the research documents in [`docs/`](docs/).
+## Development History & Changelog | Riwayat Pengembangan
 
-**&#127470;&#127465; Indonesia:** Ringkasan milestone. Untuk catatan implementasi lebih terperinci, lihat [`CHANGELOG.md`](CHANGELOG.md) dan dokumen riset di folder [`docs/`](docs/).
+This history is arranged from the newest development line to the project's earlier milestones. The overview below gives readers a quick, readable timeline; the expandable notes underneath provide additional implementation context.
+
+Riwayat ini disusun dari lini pengembangan terbaru menuju milestone proyek sebelumnya. Ringkasan di bawah memudahkan pembaca melihat perjalanan versi, sedangkan bagian yang dapat dibuka di bawahnya berisi konteks implementasi lebih lengkap.
+
+<p align="center">
+  <a href="https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/commits/main">
+    <img src="https://img.shields.io/badge/GitHub-Commit%20History-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Commit History">
+  </a>
+  <a href="https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/releases">
+    <img src="https://img.shields.io/badge/GitHub-Releases-2F81F7?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Releases">
+  </a>
+</p>
+
+---
+
+### Latest Development Line | V3.0.10–V3.0.18
+
+**The current Version 3 development line** — from output-safety refinements to the latest Equalizer, Display, scrolling, and interface improvements.
+
+**Lini pengembangan Versi 3 saat ini** — dari penyempurnaan keamanan output hingga pembaruan Equalizer, Display, scrolling, dan antarmuka terbaru.
+
+- **V3.0.18 — Display Geometry & EQ Polish:** Expanded EQ presets and refined Band Analyzer filtering, Live Display geometry, scroll rails, first-open rail visibility, theme-aware toasts, spacing, and animations.
+- **V3.0.17 — Import & Workflow Validation:** Improved backup/import validation, runtime-permission review, scene status, layer-position controls, and mode-safe parameter linking.
+- **V3.0.16 — Multi-Layer Linking:** Added per-slider linking across compatible layers, global FFT/Hop explanations, and more consistent theme-aware notification controls.
+- **V3.0.15 — Numeric Preview & Scene Workflow:** Added reversible live numeric previews, improved Theme Studio repaint behavior and numeric dialogs, and introduced Scene Save To.
+- **V3.0.14 — FFT & Notification Refinements:** Refined FFT responsiveness, frequency-range selection, diagnostics, Theme Studio color handling, and notification cold-start restoration.
+- **V3.0.13 — Theme-Aware Controls:** Added visible Play/Pause indicators to theme-aware switches and refined EQ preset dropdown animation.
+- **V3.0.12 — EQ Controls & Effect Grouping:** Reorganized EQ effect groups, clarified restricted Preamp/Reverb behavior, and polished themed controls and screen motion.
+- **V3.0.11 — EQ UI & Profile Scrolling:** Refined EQ effect controls, added Floating Profile drag auto-scroll and glass scroll feedback, and improved Display Live fitting.
+- **V3.0.10 — Output Safety:** Added fail-closed output-safety handling for the experimental EQ output-mix Preamp route and refined effect switches and profile scrolling.
+
+---
+
+### V2.4.32 — Final Release of Version 2
+
+V2.4.32 was the final documented V2 milestone before the project moved into the Version 3 Equalizer Engine development line.
+
+V2.4.32 merupakan milestone V2 terakhir yang terdokumentasi sebelum proyek beralih ke lini pengembangan Equalizer Engine Versi 3.
+
+- **Live Engine Restored:** Restored the V2.4.30 Display/Choreographer preview scheduling and live interpolation; removed the V2.4.31 changes associated with frozen previews.
+- **Display Glow Optimization:** Reduced the in-app Display preview glow while keeping the Floating renderer's full glow treatment intact.
+- **Renderer Integrity:** Preserved FFT delivery, 20 Hz–20 kHz mapping, frame-synchronized animation, Single/Horizontal geometry, and overlay position/rotation behavior.
+- **Simultaneous Rendering:** Kept Display preview and Floating rendering active together without scroll-triggered pauses or an imposed Display frame cap.
+- **Live Hz Tracking:** Made the Live Hz indicators follow the configured total bar count.
+- **100-Color Palette Album:** Added 100 color presets with live preview and Apply/Cancel behavior.
+- **Floating Profile Expansion:** Redesigned the profile interface to support up to 12 floating overlay profiles.
+- **General UI Refinement:** Polished the V2 interface and workflow. The documented package used versionCode 61.
+
+---
+
+### V1.x — Original Visualizer Foundation
+
+V1.x established the original floating audio visualizer foundation. For the historical V1 feature details and surviving development records, please review the repository's commit history and the historical README revision.
+
+V1.x menjadi fondasi awal floating audio visualizer. Untuk rincian fitur V1 dan arsip pengembangan yang masih tersedia, silakan lihat riwayat commit repository serta revisi README historis.
+
+- [Browse the complete GitHub commit history](https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/commits/main)
+- [View the historical V1 README commit](https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/commit/4aa7b510cac972d0fe655698b98a61957ab53311)
+- [Browse published GitHub Releases](https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/releases)
+
+<sub>Note: A root-level `CHANGELOG.md` is not currently present in the repository. The links above therefore point directly to the available GitHub commit and release records rather than to a file path that would return a missing page.</sub>
+
+---
+
+### Detailed Implementation Notes | Rincian Implementasi
+
+The summaries above are intentionally compact. Open a milestone below to read its expanded notes.
+
+Ringkasan di atas sengaja dibuat singkat. Buka milestone di bawah untuk membaca rincian implementasi yang lebih lengkap.
 
 <details>
-<summary><strong>V3.0.18</strong> - Display, scrolling, EQ presets, and UI polish</summary>
+<summary><strong>V3.0.18</strong> — Display geometry, scroll rails, EQ presets, and UI polish</summary>
 
-- **EN:** Expanded the built-in EQ preset library for detected 5-band and 10-band layouts. Refined Band Analyzer filtering, Live Display geometry, scroll gutters, first-open Equalizer rail behavior, theme-aware toast messages, and interface spacing/animations.
-- **ID:** Memperluas pustaka preset EQ untuk susunan 5-band dan 10-band yang terdeteksi. Merapikan penyaringan Band Analyzer, geometri Live Display, gutter scrolling, indikator Equalizer saat pertama dibuka, toast bertema, serta jarak dan animasi antarmuka.
+**EN**
+- Expanded the built-in EQ preset library for detected 5-band and 10-band layouts.
+- Refined Band Analyzer filtering and Live Display geometry.
+- Improved first-open Equalizer rail visibility and right-side scroll gutters.
+- Refined theme-aware toast messages, interface spacing, and animations.
+- Preserved versionName 3.0.18 and versionCode 95.
+
+**ID**
+- Memperluas pustaka preset EQ untuk susunan 5-band dan 10-band yang terdeteksi.
+- Merapikan penyaringan Band Analyzer dan geometri Live Display.
+- Memperbaiki visibilitas rail Equalizer saat pertama dibuka dan gutter scrolling sisi kanan.
+- Merapikan toast sesuai tema, jarak antarmuka, dan animasi.
+- Mempertahankan versionName 3.0.18 dan versionCode 95.
 
 </details>
 
 <details>
-<summary><strong>V3.0.17</strong> - Import validation and workflow refinements</summary>
+<summary><strong>V3.0.17</strong> — Import validation and workflow refinements</summary>
 
-- **EN:** Improved general backup/import validation and runtime-permission review. Refined scene status, layer-position controls, and mode-safe parameter linking.
-- **ID:** Memperkuat validasi backup/impor umum dan pemeriksaan izin runtime. Merapikan status scene, kontrol posisi layer, dan Linked parameter yang sesuai mode.
+**EN**
+- Improved general backup/import validation and runtime-permission review.
+- Refined scene status, layer-position controls, and mode-safe parameter linking.
+- Improved the Equalizer page scroll indicator.
 
-</details>
-
-<details>
-<summary><strong>V3.0.16</strong> - Multi-layer parameter linking</summary>
-
-- **EN:** Introduced per-slider linking to multiple compatible layers, global FFT/Hop explanations, and synchronized Start/Stop notification controls with theme-aware contrast.
-- **ID:** Memperkenalkan Linked per-slider ke beberapa layer kompatibel, penjelasan FFT/Hop global, serta sinkronisasi kontrol Start/Stop notifikasi dengan kontras sesuai tema.
-
-</details>
-
-<details>
-<summary><strong>V3.0.15</strong> - Numeric preview and scene workflow</summary>
-
-- **EN:** Added reversible live numeric previews, corrected Theme Studio repaint behavior, refined numeric dialogs, and added Scene Save To.
-- **ID:** Menambahkan preview angka real-time yang dapat dibatalkan, memperbaiki repaint Theme Studio, merapikan dialog numerik, dan menambahkan Scene Save To.
+**ID**
+- Memperkuat validasi backup/impor umum dan pemeriksaan izin runtime.
+- Merapikan status scene, kontrol posisi layer, dan Linked parameter yang sesuai mode.
+- Meningkatkan indikator scrolling halaman Equalizer.
 
 </details>
 
 <details>
-<summary><strong>V3.0.14</strong> - FFT and frequency refinements</summary>
+<summary><strong>V3.0.16</strong> — Multi-layer linking and notification consistency</summary>
 
-- **EN:** Refined FFT decoding and responsiveness, frequency-range selection, diagnostics, Theme Studio color handling, and notification cold-start restoration.
-- **ID:** Merapikan decoding FFT dan responsivitas, pemilihan rentang frekuensi, diagnostik, pengelolaan warna Theme Studio, serta pemulihan notifikasi saat cold-start.
+**EN**
+- Introduced per-slider linking to multiple compatible layers.
+- Added global FFT/Hop explanations.
+- Synchronized Start/Stop notification controls and theme-aware contrast.
 
-</details>
-
-<details>
-<summary><strong>V3.0.13</strong> - Theme-aware controls</summary>
-
-- **EN:** Added visible Play/Pause glyphs to theme-aware switches and refined the EQ preset dropdown animation.
-- **ID:** Menambahkan ikon Play/Pause pada switch yang mengikuti tema dan merapikan animasi dropdown preset EQ.
-
-</details>
-
-<details>
-<summary><strong>V3.0.12</strong> - EQ controls and effect grouping</summary>
-
-- **EN:** Reorganized EQ effect groups, clarified restricted Preamp/Reverb behavior, and refined theme-aware controls and screen motion.
-- **ID:** Menata ulang kelompok efek EQ, memperjelas batasan Preamp/Reverb, serta merapikan kontrol bertema dan animasi layar.
+**ID**
+- Memperkenalkan Linked per-slider ke beberapa layer kompatibel.
+- Menambahkan penjelasan FFT/Hop global.
+- Menyinkronkan kontrol Start/Stop notifikasi dan kontras sesuai tema.
 
 </details>
 
 <details>
-<summary><strong>V3.0.11</strong> - EQ UI and profile scrolling</summary>
+<summary><strong>V3.0.15</strong> — Reversible numeric preview and scene workflow</summary>
 
-- **EN:** Refined EQ effect controls, added Floating Profile drag auto-scroll and glass scroll feedback, and improved Display Live fitting.
-- **ID:** Merapikan kontrol efek EQ, menambahkan auto-scroll saat Floating Profile digeser dan indikator scroll glass, serta meningkatkan penyesuaian Display Live.
+**EN**
+- Added reversible live numeric previews.
+- Corrected Theme Studio repaint behavior.
+- Refined numeric dialogs and bar-appearance contrast.
+- Added Scene Save To.
+
+**ID**
+- Menambahkan preview angka real-time yang dapat dibatalkan.
+- Memperbaiki repaint Theme Studio.
+- Merapikan dialog numerik dan kontras tampilan bar.
+- Menambahkan Scene Save To.
 
 </details>
 
 <details>
-<summary><strong>V3.0.10</strong> - Output safety and control refinements</summary>
+<summary><strong>V3.0.14</strong> — FFT responsiveness and notification restoration</summary>
 
-- **EN:** Added output-safety protection for the experimental EQ output-mix route and refined effect switches and profile scrolling.
-- **ID:** Menambahkan perlindungan keamanan output pada jalur EQ output-mix eksperimental serta merapikan switch efek dan scrolling profile.
+**EN**
+- Refined FFT decoding and responsiveness, frequency-range selection, and diagnostics.
+- Improved Theme Studio color handling and numeric effect dialogs.
+- Refined notification cold-start restoration.
+
+**ID**
+- Merapikan decoding FFT dan responsivitas, pemilihan rentang frekuensi, serta diagnostik.
+- Meningkatkan pengelolaan warna Theme Studio dan dialog angka efek.
+- Merapikan pemulihan notifikasi saat cold-start.
 
 </details>
+
+<details>
+<summary><strong>V3.0.13</strong> — Theme-aware switches and preset animation</summary>
+
+**EN**
+- Added visible Play/Pause glyphs to theme-aware switches.
+- Refined EQ preset dropdown reveal and row animation.
+
+**ID**
+- Menambahkan ikon Play/Pause pada switch yang mengikuti tema.
+- Merapikan animasi dropdown dan baris preset EQ.
+
+</details>
+
+<details>
+<summary><strong>V3.0.12</strong> — EQ effect grouping and interaction polish</summary>
+
+**EN**
+- Reorganized EQ effect groups.
+- Clarified restricted Preamp/Reverb behavior.
+- Refined theme-aware controls and screen motion.
+
+**ID**
+- Menata ulang kelompok efek EQ.
+- Memperjelas batasan Preamp/Reverb.
+- Merapikan kontrol bertema dan animasi layar.
+
+</details>
+
+<details>
+<summary><strong>V3.0.11</strong> — EQ controls, profile auto-scroll, and Display fitting</summary>
+
+**EN**
+- Refined EQ effect controls.
+- Added Floating Profile drag auto-scroll and glass scroll feedback.
+- Improved Display Live fitting.
+
+**ID**
+- Merapikan kontrol efek EQ.
+- Menambahkan auto-scroll saat Floating Profile digeser dan indikator scroll glass.
+- Meningkatkan penyesuaian Display Live.
+
+</details>
+
+<details>
+<summary><strong>V3.0.10</strong> — Output safety and control refinements</summary>
+
+**EN**
+- Added fail-closed output safety for the experimental EQ output-mix Preamp route.
+- Refined effect switches and profile scrolling while retaining saved values safely.
+
+**ID**
+- Menambahkan perlindungan output fail-closed pada jalur Preamp output-mix EQ eksperimental.
+- Merapikan switch efek dan scrolling profile dengan tetap mempertahankan nilai tersimpan secara aman.
+
+</details>
+
+<details>
+<summary><strong>V2.4.32</strong> — Final V2 implementation notes</summary>
+
+**EN**
+- Restored the complete V2.4.30 Display/Choreographer preview scheduling and live interpolation.
+- Removed V2.4.31 preview pausing, 30 FPS pacing, and parent-only invalidation changes associated with frozen Display previews.
+- Reduced only the in-app Display preview glow using a smaller, lower-intensity halo treatment.
+- Preserved the full Floating Service glow renderer, FFT delivery, 20 Hz–20 kHz mapping, frame-synchronized animation, Single/Horizontal geometry, and overlay position/rotation logic.
+- Kept Display and Floating renderers running simultaneously without scroll-triggered pauses or Display frame caps.
+- Updated Live Hz tracking to follow the configured total bar count.
+- Added a 100-preset color album with live preview and Apply/Cancel.
+- Redesigned Floating Profile UI to support up to 12 floating overlays.
+- Refined general UI/UX; documented versionCode: 61.
+
+**ID**
+- Mengembalikan penjadwalan preview Display/Choreographer dan interpolasi real-time V2.4.30 secara penuh.
+- Menghapus perubahan preview pause, pacing 30 FPS, dan invalidation parent-only dari V2.4.31 yang berkaitan dengan preview Display macet.
+- Mengurangi glow hanya pada preview Display di dalam aplikasi menggunakan halo yang lebih kecil dan lebih ringan.
+- Mempertahankan Floating Service glow renderer, pengiriman FFT, pemetaan 20 Hz–20 kHz, animasi sinkron-bingkai, geometri Single/Horizontal, serta logika posisi/rotasi overlay.
+- Menjaga renderer Display dan Floating berjalan bersamaan tanpa jeda akibat scrolling atau pembatasan frame Display.
+- Memperbarui Live Hz tracking agar mengikuti jumlah total bar yang dikonfigurasi.
+- Menambahkan album warna berisi 100 preset dengan live preview serta Apply/Cancel.
+- Mendesain ulang Floating Profile UI agar mendukung hingga 12 floating overlay.
+- Merapikan UI/UX secara umum; versionCode terdokumentasi: 61.
+
+</details>
+
+<details>
+<summary><strong>V3.0.0–V3.0.9</strong> — Experimental Equalizer Engine milestone</summary>
+
+**EN**
+- **Integrated Equalizer Engine:** Added an experimental EQ Output Mix engine alongside the existing visualizer system.
+- **Adaptive EQ Bands:** Added 5-band and 10-band layouts according to the active backend and device capabilities.
+- **Device Capability Detection:** Added effect inventory and runtime capability checks rather than assuming every device supports the same effects.
+- **Preset Management:** Added custom preset creation, Save, Save To, Rename, Delete, Current State handling, and Flat reset.
+- **Starter EQ Presets:** Added starter curves for 5-band and 10-band configurations.
+- **Precision Band Controls:** Added direct dB value input, individual band reset, and horizontal navigation for multi-band layouts.
+- **Preamp:** Added input-gain control before EQ processing when supported by the active processing engine.
+- **Bass Boost and Virtualizer:** Integrated additional audio-effect controls where device support and control ownership allow.
+- **Dynamics Processing Limiter:** Added an experimental limiter stage with configurable enable/disable behavior on supported engines.
+- **Reverb Capability Detection:** Added Reverb detection and attachment requirement information. Global Reverb is not assumed.
+- **EQ Preset Import/Export:** Added dedicated EQ preset exchange.
+- **Modern EQ Workspace:** Added a dedicated Equalizer Activity with Theme Studio integration, modern faders, responsive band canvas, and improved preset controls.
+- **Notification Integration:** Expanded notification actions for supported Floating and EQ controls.
+- **State and Lifecycle Refinements:** Improved working-state handling and EQ configuration restoration.
+
+**ID**
+- **Equalizer Engine Terintegrasi:** Menambahkan EQ Output Mix eksperimental di samping sistem visualizer yang sudah ada.
+- **Band EQ Adaptif:** Menghadirkan susunan 5-band dan 10-band sesuai backend aktif dan kemampuan perangkat.
+- **Deteksi Kapabilitas Perangkat:** Menambahkan pemeriksaan inventory effect dan kapabilitas runtime, bukan menganggap semua perangkat memiliki dukungan yang sama.
+- **Pengelolaan Preset:** Menambahkan pembuatan preset, Save, Save To, Rename, Delete, pengelolaan Current State, dan reset Flat.
+- **Preset EQ Awal:** Menambahkan kurva awal untuk konfigurasi 5-band dan 10-band.
+- **Kontrol Band Presisi:** Menambahkan input nilai dB langsung, reset setiap band, dan navigasi horizontal untuk layout multi-band.
+- **Preamp:** Menambahkan kontrol input gain sebelum proses EQ pada engine yang mendukung.
+- **Bass Boost dan Virtualizer:** Mengintegrasikan kontrol efek audio tambahan sesuai dukungan perangkat dan kepemilikan kontrol effect.
+- **Dynamics Processing Limiter:** Menambahkan stage limiter eksperimental dengan kontrol aktif/nonaktif pada engine yang mendukung.
+- **Deteksi Reverb:** Menambahkan deteksi dukungan Reverb dan informasi persyaratan attachment. Reverb global tidak diasumsikan tersedia.
+- **Import/Export Preset EQ:** Menambahkan pertukaran preset EQ secara terpisah.
+- **Workspace EQ Modern:** Menghadirkan Equalizer Activity khusus dengan integrasi Theme Studio, fader modern, canvas band adaptif, dan pengelolaan preset yang diperbarui.
+- **Integrasi Notifikasi:** Menambahkan kontrol notifikasi untuk fungsi Floating dan EQ yang didukung.
+- **Penyempurnaan State dan Lifecycle:** Memperbaiki pengelolaan working state dan pemulihan konfigurasi EQ.
+
+<blockquote>
+  <strong>Audio limitation / Batasan audio:</strong> The output-mix/session-0 route is experimental and device-dependent. Detecting or constructing an effect does not prove that all third-party applications or every audio route are processed. Reverb requires a compatible player-owned session and auxiliary send path.
+  <br>
+  Jalur output-mix/session-0 masih eksperimental dan bergantung pada perangkat. Effect yang terdeteksi atau berhasil dibuat tidak membuktikan bahwa seluruh aplikasi pihak ketiga atau semua jalur audio ikut diproses. Reverb memerlukan session milik player yang kompatibel dan jalur auxiliary send.
+</blockquote>
+
+<sub>Milestone note: the implementation report groups the documented progression across V3.0.0–V3.0.9. A separate V3.0.4 change record was not available in the implementation dossier.</sub>
+
+<sub>Catatan milestone: laporan implementasi mengelompokkan progres yang terdokumentasi pada V3.0.0–V3.0.9. Catatan perubahan V3.0.4 secara terpisah tidak tersedia dalam dossier implementasi.</sub>
+
+</details>
+
+---
+
+**Release and commit references / Referensi rilis dan commit**
+
+- [Browse all repository commits](https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/commits/main)
+- [Browse GitHub Releases](https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/releases)
+- [View the historical V1 README commit](https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/commit/4aa7b510cac972d0fe655698b98a61957ab53311)
+
+<sub>Historical accuracy: V1.x and V2.4.32 are presented as documented milestones. Where the surviving records do not identify a precise patch or public release, this README links to repository history instead of inventing a version-specific record.</sub>
+
+<sub>Akurasi riwayat: V1.x dan V2.4.32 ditampilkan sebagai milestone yang terdokumentasi. Jika arsip yang tersedia tidak menunjukkan patch atau rilis publik secara pasti, README mengarahkan pembaca ke riwayat repository tanpa mengarang catatan versi tertentu.</sub>
 
 ---
 
