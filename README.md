@@ -50,6 +50,8 @@
 
 ---
 
+<a id="app-preview"></a>
+
 ## App Preview
 
 *Pratinjau Aplikasi*
@@ -120,6 +122,8 @@
 
 ---
 
+<a id="about"></a>
+
 ## About | Tentang Proyek
 
 **&#127468;&#127463; English**
@@ -137,6 +141,8 @@ Proyek ini dikembangkan langsung melalui perangkat Android menggunakan [CodeAssi
 > **Project status / Status proyek:** V3.0.19.0 is the current documented development line. The Equalizer Engine is experimental and device-dependent. / V3.0.19.0 adalah lini pengembangan yang didokumentasikan saat ini. Equalizer Engine masih eksperimental dan bergantung pada perangkat.
 
 ---
+
+<a id="key-features"></a>
 
 ## Key Features | Fitur Utama
 
@@ -176,6 +182,8 @@ Proyek ini dikembangkan langsung melalui perangkat Android menggunakan [CodeAssi
 
 ---
 
+<a id="test-presets"></a>
+
 ## Test Presets | Preset Uji Coba
 
 **&#127468;&#127463; English**
@@ -187,6 +195,8 @@ Example configurations from development and testing may be available in [`Test -
 Contoh konfigurasi dari proses pengembangan dan pengujian dapat tersedia di folder [`Test - Preset/`](Test%20-%20Preset/). Gunakan file yang sesuai dengan versi aplikasi dan periksa isinya sebelum diterapkan.
 
 ---
+
+<a id="technology-stack"></a>
 
 ## Technology Stack | Teknologi
 
@@ -202,6 +212,8 @@ Contoh konfigurasi dari proses pengembangan dan pengujian dapat tersedia di fold
 
 ---
 
+<a id="compatibility"></a>
+
 ## Compatibility | Kompatibilitas
 
 | Item | Configuration |
@@ -213,6 +225,8 @@ Contoh konfigurasi dari proses pengembangan dan pengujian dapat tersedia di fold
 | Audio effects | Availability and control vary by device, ROM, player, and active audio route. / Ketersediaan dan kontrol bergantung pada perangkat, ROM, player, dan jalur audio aktif. |
 
 ---
+
+<a id="audio-processing-notes"></a>
 
 ## Audio Processing Notes | Catatan Pemrosesan Audio
 
@@ -553,6 +567,8 @@ Ringkasan di atas sengaja dibuat singkat. Buka milestone di bawah untuk membaca 
 <sub>Akurasi riwayat: V1.x dan V2.4.32 ditampilkan sebagai milestone yang terdokumentasi. Jika arsip yang tersedia tidak menunjukkan patch atau rilis publik secara pasti, README mengarahkan pembaca ke riwayat repository tanpa mengarang catatan versi tertentu.</sub>
 
 ---
+
+<a id="contact"></a>
 
 ## Contact | Kontak
 
