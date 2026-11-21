@@ -117,6 +117,20 @@ class FloatingVisualizerService : Service() {
         private const val DEFAULT_FFT_SIZE = 2048
         private const val DEFAULT_HOP_SIZE = 512
         private const val MAX_BAR_COUNT = 64
+        // Single/DJ range metering needs a finer logarithmic bank than the
+        // 64 bands used by Horizontal bars. The extra bank lets every profile
+        // resolve its own narrow Hz range without borrowing a global selection.
+        private const val SINGLE_SPECTRUM_BAND_COUNT = 256
+        private const val SINGLE_SPECTRUM_OFFSET = MAX_BAR_COUNT + 2
+        private const val SINGLE_BIN_HZ_INDEX = SINGLE_SPECTRUM_OFFSET + SINGLE_SPECTRUM_BAND_COUNT
+        private const val SPECTRUM_FRAME_SIZE = SINGLE_BIN_HZ_INDEX + 1
+        // Fixed PCM Hann-FFT calibration is restored to the V3.0.18.1
+        // reference level. This is a constant scale, not frame-peak or
+        // content-dependent normalization. Single/DJ keeps its independent
+        // high-resolution calibration below.
+        private const val PCM_TO_VISUALIZER_LEVEL_SCALE = 9.0
+        private const val PCM_SINGLE_RANGE_LEVEL_SCALE = 30.0
+        private const val VISUALIZER_HORIZONTAL_LEVEL_EXPONENT = 0.68
         private const val MIN_SPECTRUM_HZ = 20.0
         private const val MAX_SPECTRUM_HZ = 20000.0
         private const val SEGMENT_COUNT = 24
@@ -191,14 +205,15 @@ class FloatingVisualizerService : Service() {
 
     private fun spectrumFrameSmoothingFactors(responsePercent: Int, dtSeconds: Float): Pair<Float, Float> {
         val response = responsePercent.coerceIn(0, 100) / 100f
-        // Convert the old per-capture response (nominally 20 Hz) into a time-based
-        // exponential curve once per display frame, not once per individual bar.
-        val dt = dtSeconds.coerceIn(0.001f, 0.05f)
-        fun factor(sampleFactor: Float): Float {
-            val ratePerSecond = -kotlin.math.ln((1f - sampleFactor).coerceAtLeast(0.001f).toDouble()) / 0.05
-            return (1.0 - exp(-ratePerSecond * dt)).toFloat().coerceIn(0f, 1f)
-        }
-        return Pair(factor(0.56f + response * 0.40f), factor(0.20f + response * 0.62f))
+        // Use direct time constants rather than a legacy 20 Hz capture assumption.
+        // At 41% this gives ~16.6 ms attack and ~38.9 ms release; every display
+        // frame evaluates the same curve, regardless of whether the panel is 60/90/120 Hz.
+        val dt = dtSeconds.coerceIn(0.001f, 0.05f).toDouble()
+        val attackTauSeconds = (24.0 - response * 18.0) / 1000.0
+        val releaseTauSeconds = (52.0 - response * 32.0) / 1000.0
+        val attack = (1.0 - exp(-dt / attackTauSeconds)).toFloat().coerceIn(0f, 1f)
+        val release = (1.0 - exp(-dt / releaseTauSeconds)).toFloat().coerceIn(0f, 1f)
+        return Pair(attack, release)
     }
 
     private var windowView: FrameLayout? = null
@@ -218,6 +233,9 @@ class FloatingVisualizerService : Service() {
     private var engineSource = EngineSource.NONE
 
     @Volatile private var backupRunning = false
+    // Each reader owns one generation. A stopped reader can never become active
+    // again merely because a later settings update sets backupRunning=true.
+    @Volatile private var backupGeneration: Long = 0L
     @Volatile private var stopping = false
     @Volatile private var bassMinHz = 20
     @Volatile private var bassMaxHz = 125
@@ -258,6 +276,16 @@ class FloatingVisualizerService : Service() {
     private var pcmFftReal = DoubleArray(DEFAULT_FFT_SIZE)
     private var pcmFftImag = DoubleArray(DEFAULT_FFT_SIZE)
     private var pcmHannWindow = createHannWindow(DEFAULT_FFT_SIZE)
+    // Playback capture is kept stereo where the device supports it. FFT is run
+    // independently for L/R, then magnitudes are combined as energy so
+    // anti-phase stereo material cannot cancel during a pre-FFT mono downmix.
+    private var pcmMagnitudeLeft = DoubleArray(DEFAULT_FFT_SIZE / 2 + 1)
+    private var pcmMagnitudeRight = DoubleArray(DEFAULT_FFT_SIZE / 2 + 1)
+    private var pcmMagnitudeCombined = DoubleArray(DEFAULT_FFT_SIZE / 2 + 1)
+    @Volatile private var projectionChannelCount = 1
+    @Volatile private var projectionSampleRateHz = SAMPLE_RATE
+    @Volatile private var appliedVisualizerCaptureSize = 0
+    @Volatile private var appliedVisualizerCaptureRate = 0
 
     private fun createHannWindow(size: Int): DoubleArray = DoubleArray(size) { index ->
         0.5 * (1.0 - cos(2.0 * PI * index / (size - 1)))
@@ -276,10 +304,16 @@ class FloatingVisualizerService : Service() {
 
     private fun ensurePcmFftWorkspace() {
         val size = fftSizeSetting.coerceIn(1024, 4096)
-        if (pcmFftReal.size != size || pcmFftImag.size != size || pcmHannWindow.size != size) {
+        val magnitudeSize = size / 2 + 1
+        if (pcmFftReal.size != size || pcmFftImag.size != size || pcmHannWindow.size != size ||
+            pcmMagnitudeLeft.size != magnitudeSize || pcmMagnitudeRight.size != magnitudeSize ||
+            pcmMagnitudeCombined.size != magnitudeSize) {
             pcmFftReal = DoubleArray(size)
             pcmFftImag = DoubleArray(size)
             pcmHannWindow = createHannWindow(size)
+            pcmMagnitudeLeft = DoubleArray(magnitudeSize)
+            pcmMagnitudeRight = DoubleArray(magnitudeSize)
+            pcmMagnitudeCombined = DoubleArray(magnitudeSize)
         }
     }
     private var switchingSource = false
@@ -343,7 +377,16 @@ class FloatingVisualizerService : Service() {
                 stopping = true
                 stopEngineResources()
                 removeOverlay()
+                floatingOverlayEnabled = false
+                audioPaused = false
+                getSharedPreferences("floating_dj_settings", MODE_PRIVATE).edit()
+                    .putBoolean("floating_overlay_enabled", false)
+                    .putBoolean("backup_capture", false)
+                    .putBoolean("service_paused", false)
+                    .putBoolean("service_active", false)
+                    .apply()
                 setServiceActive(false)
+                // Do not touch EqEngineService or its independent notification.
                 stopForegroundCompat()
                 stopSelf(startId)
                 return START_NOT_STICKY
@@ -409,25 +452,24 @@ class FloatingVisualizerService : Service() {
                             if (fftSizeChanged) {
                                 val restarted = startPrimaryEngineInternal()
                                 if (!restarted) broadcastStatus("PRIMARY_ERROR: Visualizer could not apply the selected FFT size")
-                                else broadcastStatus("PRIMARY_ACTIVE: Visualizer reconfigured · FFT ${fftSizeSetting}")
+                                else broadcastStatus("PRIMARY_ACTIVE: Visualizer reconfigured · requested FFT ${fftSizeSetting} · applied FFT ${appliedVisualizerCaptureSize} · callback ${appliedVisualizerCaptureRate / 1000.0} Hz · Hop N/A")
                             }
                             updateFloatingWindow()
                             return START_STICKY
                         }
                         EngineSource.PROJECTION -> {
+                            // FFT/Hop are analyzer settings, not a reason to acquire a
+                            // second playback-capture AudioRecord or discard user consent.
                             val restarted = restartProjectionCaptureForAnalysisSettings()
                             if (restarted) {
-                                broadcastStatus("BACKUP_ACTIVE: MediaProjection reconfigured · FFT ${fftSizeSetting} · Hop ${hopSizeSetting}")
+                                val captureChannels = if (projectionChannelCount >= 2) "stereo" else "mono fallback"
+                                val captureRateKhz = String.format(java.util.Locale.US, "%.1f", projectionSampleRateHz / 1000.0)
+                                broadcastStatus("BACKUP_ACTIVE: MediaProjection $captureChannels · FFT ${fftSizeSetting} · Hop ${hopSizeSetting} · ${captureRateKhz} kHz")
                             } else {
-                                // Preserve a usable audio source if the PCM recorder
-                                // rejects a newly selected analysis configuration.
-                                switchingSource = true
-                                stopProjectionResources()
-                                switchingSource = false
-                                startPrimaryForeground()
-                                val fallback = startPrimaryEngineInternal()
-                                if (fallback) broadcastStatus("BACKUP_ERROR: New FFT/Hop settings were rejected; primary Visualizer restarted")
-                                else broadcastStatus("BACKUP_ERROR: Reconfiguration failed and primary Visualizer is unavailable")
+                                // Keep the selected MediaProjection route and its switch
+                                // state. A settings-restart problem is not an instruction
+                                // to silently switch the user to Android Visualizer(0).
+                                broadcastStatus("BACKUP_RECONFIG_ERROR: The PCM reader could not be restarted for the new FFT/Hop settings; the MediaProjection session was retained")
                             }
                             updateFloatingWindow()
                             return START_STICKY
@@ -770,6 +812,14 @@ class FloatingVisualizerService : Service() {
         return PendingIntent.getService(this, requestCode, command, notificationPendingFlags())
     }
 
+    private fun visualizerStopConfirmationPendingIntent(): PendingIntent {
+        val open = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            putExtra(MainActivity.EXTRA_CONFIRM_STOP_VISUALIZER, true)
+        }
+        return PendingIntent.getActivity(this, 9102, open, notificationPendingFlags())
+    }
+
     private fun backupTogglePendingIntent(): PendingIntent {
         val open = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -787,6 +837,11 @@ class FloatingVisualizerService : Service() {
         val preferences = getSharedPreferences("floating_dj_settings", MODE_PRIVATE)
         val mode = notificationThemeMode()
         val night = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        // Custom surfaces may change their own luminance, but the notification text
+        // follows the phone's Light/Dark appearance exactly as requested.
+        if (mode == "CUSTOM" || mode == "GLASS") {
+            return if (night) Color.WHITE else Color.parseColor("#17243A")
+        }
         val (key, fallback) = when (mode) {
             "LIGHT" -> "theme_text_color_light" to Color.parseColor("#24324A")
             "DARK" -> "theme_text_color_dark" to Color.parseColor("#F2F5FC")
@@ -795,26 +850,14 @@ class FloatingVisualizerService : Service() {
             } else {
                 "theme_text_color_system_light" to Color.parseColor("#24324A")
             }
-            "CUSTOM" -> "theme_text_color_custom" to Color.parseColor("#F5F7FC")
             else -> "theme_text_color_glass" to Color.parseColor("#F5F7FC")
         }
         val savedColor = when {
             preferences.contains(key) -> preferences.getInt(key, fallback)
-            mode == "CUSTOM" && preferences.contains("theme_text_color") -> preferences.getInt("theme_text_color", fallback)
             mode == "SYSTEM" && preferences.contains("theme_text_color_system") -> preferences.getInt("theme_text_color_system", fallback)
             else -> fallback
         }
-        val light = notificationStudioIsLight()
-        if (mode == "CUSTOM") {
-            val surface = preferences.getInt("theme_surface_color", Color.parseColor("#1C2B42"))
-            val top = notificationAdjustColor(surface, 0.08f)
-            val bottom = notificationAdjustColor(surface, -0.08f)
-            if (minOf(notificationContrastRatio(savedColor, top), notificationContrastRatio(savedColor, bottom)) < 4.5) {
-                return notificationBestContrastText(top, bottom)
-            }
-            return savedColor
-        }
-        val referenceSurface = if (light) Color.WHITE else Color.parseColor("#101A2B")
+        val referenceSurface = if (notificationStudioIsLight()) Color.WHITE else Color.parseColor("#101A2B")
         return if (notificationContrastRatio(savedColor, referenceSurface) >= 4.5) savedColor
         else notificationBestContrastText(referenceSurface, referenceSurface)
     }
@@ -844,15 +887,12 @@ class FloatingVisualizerService : Service() {
 
     private fun notificationStudioIsLight(): Boolean {
         val preferences = getSharedPreferences("floating_dj_settings", MODE_PRIVATE)
+        val systemIsLight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) != Configuration.UI_MODE_NIGHT_YES
         return when (notificationThemeMode()) {
             "LIGHT" -> true
-            "SYSTEM" -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) != Configuration.UI_MODE_NIGHT_YES
-            "CUSTOM" -> {
-                val surface = preferences.getInt("theme_surface_color", Color.parseColor("#1C2B42"))
-                (Color.red(surface) * 0.2126 + Color.green(surface) * 0.7152 + Color.blue(surface) * 0.0722) > 145.0
-            }
-            "DARK", "GLASS" -> false
-            else -> false
+            "SYSTEM", "CUSTOM", "GLASS" -> systemIsLight
+            "DARK" -> false
+            else -> systemIsLight
         }
     }
 
@@ -1004,12 +1044,9 @@ class FloatingVisualizerService : Service() {
                 )
             )
             setTextViewText(R.id.notificationPauseLabel, audioLabel)
-            val audioAction = if (audioActive) ACTION_NOTIFICATION_STOP_AUDIO else ACTION_NOTIFICATION_START_AUDIO
-            val audioRequestCode = if (audioActive) 9102 else 9105
-            setOnClickPendingIntent(
-                R.id.notificationPauseRow,
-                serviceActionPendingIntent(audioAction, audioRequestCode)
-            )
+            val audioIntent = if (audioActive) visualizerStopConfirmationPendingIntent()
+                else serviceActionPendingIntent(ACTION_NOTIFICATION_START_AUDIO, 9105)
+            setOnClickPendingIntent(R.id.notificationPauseRow, audioIntent)
 
             setImageViewBitmap(R.id.notificationEqIcon, buildNotificationIconBitmap(android.R.drawable.ic_media_ff, primaryTextColor))
             setTextViewText(R.id.notificationEqLabel, localizedServiceText("EQ Engine"))
@@ -1225,20 +1262,37 @@ class FloatingVisualizerService : Service() {
             if (captureSizeStatus != Visualizer.SUCCESS) {
                 throw IllegalStateException("Gagal mengatur capture size ($captureSizeStatus)")
             }
+            val appliedCaptureSize = engine.captureSize
+            if (appliedCaptureSize <= 0) throw IllegalStateException("Visualizer mengembalikan capture size aktual yang tidak valid")
+            appliedVisualizerCaptureSize = appliedCaptureSize
+
+            // Retain NORMALIZED mode for the validated Single/DJ measurement
+            // bank. Switching this capture globally to AS_PLAYED would also
+            // change the successful 55–62 Hz / vocal range behavior. Horizontal
+            // levels are shaped independently after the FFT instead.
+            val scalingStatus = try {
+                engine.setScalingMode(Visualizer.SCALING_MODE_NORMALIZED)
+            } catch (error: Exception) {
+                android.util.Log.w("FloatingDJ.Audio", "Visualizer scaling mode unavailable", error)
+                Visualizer.ERROR
+            }
+            if (scalingStatus != Visualizer.SUCCESS) {
+                android.util.Log.w("FloatingDJ.Audio", "Visualizer normalized scaling request returned $scalingStatus; keeping device default")
+            }
 
             val maxRate = Visualizer.getMaxCaptureRate()
             if (maxRate <= 0) throw IllegalStateException("Visualizer melaporkan capture rate maksimum tidak valid: $maxRate")
-            // Android's Visualizer callback rate is expressed in milliHertz. The
-            // platform/AOSP implementation commonly caps this at 20,000 mHz (20 Hz).
-            // Drawing at 60/90/120 Hz can interpolate between samples, but cannot
-            // create new audio measurements between those callback frames.
-            val rate = min(maxRate, 20000)
+            // getMaxCaptureRate() is already the platform-advertised maximum in
+            // milliHertz. Do not impose an extra 20 Hz cap on OEMs that support more.
+            val rate = maxRate
+            appliedVisualizerCaptureRate = rate
             val sampleRateHz = (engine.samplingRate / 1000.0).takeIf { it > 1000.0 } ?: 44100.0
             val binHz = sampleRateHz / captureSize.toDouble()
             val windowMs = captureSize * 1000.0 / sampleRateHz
             android.util.Log.i(
                 "FloatingDJ.Audio",
-                "Visualizer requestedFft=$preferredCaptureSize, appliedCaptureSize=$captureSize, binResolution=${String.format(java.util.Locale.US, "%.2f", binHz)}Hz, " +
+                "Visualizer requestedFft=$preferredCaptureSize, appliedCaptureSize=$appliedCaptureSize, captureRange=${range[0]}..${range[1]}, " +
+                    "binResolution=${String.format(java.util.Locale.US, "%.2f", binHz)}Hz, " +
                     "window=${String.format(java.util.Locale.US, "%.1f", windowMs)}ms, " +
                     "requestedRate=${rate / 1000.0}Hz, mappedSpectrum=${MIN_SPECTRUM_HZ.toInt()}–${MAX_SPECTRUM_HZ.toInt()}Hz"
             )
@@ -1308,7 +1362,7 @@ class FloatingVisualizerService : Service() {
             // service has persisted its active state, so its notification refresh
             // sees the correct Start/Stop and Floating settings.
             restoreEqEngineFromPreferencesIfEnabled()
-            broadcastStatus("PRIMARY_ACTIVE: Visualizer output-mix is active")
+            broadcastStatus("PRIMARY_ACTIVE: Visualizer output-mix active · requested FFT $preferredCaptureSize · applied FFT $appliedCaptureSize · callback ${rate / 1000.0} Hz · Hop N/A")
             refreshNotification("System audio visualizer active")
             true
         } catch (e: Exception) {
@@ -1321,6 +1375,8 @@ class FloatingVisualizerService : Service() {
             }
 
             releaseVisualizer()
+            appliedVisualizerCaptureSize = 0
+            appliedVisualizerCaptureRate = 0
             engineSource = EngineSource.NONE
             // The service remains foreground and can still accept a user-approved
             // MediaProjection backup request from the app switch.
@@ -1351,6 +1407,8 @@ class FloatingVisualizerService : Service() {
     private fun releaseVisualizer() {
         val old = visualizer
         visualizer = null
+        appliedVisualizerCaptureSize = 0
+        appliedVisualizerCaptureRate = 0
         if (old != null) {
             try { old.setEnabled(false) } catch (_: Exception) {}
             try { old.setDataCaptureListener(null, 0, false, false) } catch (_: Exception) {}
@@ -1361,7 +1419,7 @@ class FloatingVisualizerService : Service() {
     private fun calculateVisualizerSpectrum(fft: ByteArray, samplingRateMilliHz: Int): FloatArray {
         // A fixed 64-band logarithmic bank gives every rendered bar a stable,
         // independent frequency map regardless of the selected bar count.
-        val result = FloatArray(MAX_BAR_COUNT + 2)
+        val result = FloatArray(SPECTRUM_FRAME_SIZE)
         // Android packs the FFT as: DC real at [0], Nyquist real at [1],
         // then Re/Im pairs for bins 1..N/2-1. DC and Nyquist are NOT a pair.
         val nyquistBin = (fft.size / 2).coerceAtLeast(1)
@@ -1403,55 +1461,116 @@ class FloatingVisualizerService : Service() {
         for (band in 0 until MAX_BAR_COUNT) {
             val lowHz = spectrumMinHz * ratio.pow(band.toDouble() / MAX_BAR_COUNT)
             val highHz = spectrumMinHz * ratio.pow((band + 1).toDouble() / MAX_BAR_COUNT)
-            val magnitude = measureLogBandMagnitude(lowHz, highHz, ::interpolatedMagnitude)
+            val magnitude = measureLogBandMagnitude(lowHz, highHz, sampleRate / fft.size.toDouble(), ::interpolatedMagnitude)
             val raw = (magnitude / 100.0).coerceIn(0.0, 1.0)
-            val target = sqrt(raw).toFloat().coerceIn(0f, 1f)
+            // Normalized output-mix capture can lift quiet broadband energy.
+            // A slightly steeper Horizontal curve suppresses that low-level
+            // floor without touching the independently calibrated Single bank.
+            val target = raw.pow(VISUALIZER_HORIZONTAL_LEVEL_EXPONENT)
+                .toFloat().coerceIn(0f, 1f)
             result[band] = target
-            power += target.toDouble() * target.toDouble()
+            // Preserve the legacy whole-spectrum meter slot for Single/DJ
+            // full-range profiles; only the first 64 Horizontal samples use
+            // the route-specific exponent above.
+            val legacyMeterLevel = sqrt(raw).coerceIn(0.0, 1.0)
+            power += legacyMeterLevel * legacyMeterLevel
         }
 
         val lowBassHz = min(bassMinHz, bassMaxHz).toDouble()
         val highBassHz = max(bassMinHz, bassMaxHz).toDouble()
         val binHz = sampleRate / fft.size.toDouble()
-        // 0–0 remains the documented full-range mode. Otherwise skip DC (not
-        // an audible bass tone) and select the nearest available positive bins.
+        // 0–0 remains the documented full-range mode. Otherwise measure the
+        // selected Single/DJ band fractionally; do not round a narrow range to
+        // the next whole bin when this device's Visualizer FFT is coarse.
         val fullRange = lowBassHz == 0.0 && highBassHz == 0.0
-        val firstBass = if (fullRange) 1 else
-            ceil(lowBassHz / binHz).toInt().coerceIn(1, (nyquistBin - 1).coerceAtLeast(1))
-        val lastBass = if (fullRange) (nyquistBin - 1).coerceAtLeast(firstBass) else
-            floor(highBassHz / binHz).toInt().coerceIn(firstBass, (nyquistBin - 1).coerceAtLeast(firstBass))
-        var bassPeak = 0.0
-        for (bin in firstBass..lastBass) bassPeak = max(bassPeak, magnitudeAtBin(bin))
-        result[MAX_BAR_COUNT] = (bassPeak / 100.0).coerceIn(0.0, 1.0).pow(0.58).toFloat()
+        val bassLow = if (fullRange) binHz else lowBassHz
+        val bassHigh = if (fullRange) (nyquist - binHz).coerceAtLeast(bassLow * 1.0001) else highBassHz
+        val bassMagnitude = measureLogBandMagnitude(bassLow, bassHigh, binHz, ::interpolatedMagnitude)
+        result[MAX_BAR_COUNT] = (bassMagnitude / 100.0).coerceIn(0.0, 1.0).pow(0.58).toFloat()
 
         result[MAX_BAR_COUNT + 1] = sqrt(power / MAX_BAR_COUNT.toDouble()).toFloat().coerceIn(0f, 1f)
+        writeSingleFrequencyBank(result, sampleRate, fft.size.toDouble(), ::interpolatedMagnitude) { magnitude ->
+            (magnitude / 100.0).coerceIn(0.0, 1.0).pow(0.58).toFloat()
+        }
         return result
     }
 
-    /** Samples several fractional FFT positions inside one logarithmic band.
-     * Fractional interpolation avoids assigning the exact same coarse FFT bin
-     * to multiple neighbouring low-frequency bars on devices with small FFTs.
+    /**
+     * Appends a high-resolution logarithmic bank dedicated to Single/DJ range
+     * tracking. The first 64 entries remain the shared Horizontal spectrum.
+     * The final metadata entry records the real FFT bin width so narrow user
+     * ranges can be widened only to the analyzer's actual resolution.
+     */
+    private fun writeSingleFrequencyBank(
+        destination: FloatArray,
+        sampleRateHz: Double,
+        fftSize: Double,
+        sampleAtHz: (Double) -> Double,
+        toLevel: (Double) -> Float
+    ) {
+        val safeRate = sampleRateHz.coerceAtLeast(8000.0)
+        val nyquist = safeRate / 2.0
+        val maxHz = min(MAX_SPECTRUM_HZ, nyquist * 0.995).coerceAtLeast(MIN_SPECTRUM_HZ + 1.0)
+        val ratio = maxHz / MIN_SPECTRUM_HZ
+        val binHz = safeRate / fftSize.coerceAtLeast(1.0)
+        for (band in 0 until SINGLE_SPECTRUM_BAND_COUNT) {
+            val low = MIN_SPECTRUM_HZ * ratio.pow(band.toDouble() / SINGLE_SPECTRUM_BAND_COUNT)
+            val high = MIN_SPECTRUM_HZ * ratio.pow((band + 1).toDouble() / SINGLE_SPECTRUM_BAND_COUNT)
+            val magnitude = measureLogBandMagnitude(low, high, binHz, sampleAtHz)
+            destination[SINGLE_SPECTRUM_OFFSET + band] = toLevel(magnitude).coerceIn(0f, 1f)
+        }
+        destination[SINGLE_BIN_HZ_INDEX] = binHz.toFloat()
+    }
+
+    /**
+     * Measures an entire logarithmic band rather than probing only five arbitrary
+     * frequencies. Every FFT bin whose centre falls inside the band contributes
+     * to RMS energy and peak detection. Sub-bin-width ranges use fractional
+     * interpolation so a narrow Single-mode range (for example 55–62 Hz) does
+     * not jump to an unrelated neighbouring bin on a coarse device Visualizer.
      */
     private fun measureLogBandMagnitude(
         lowHz: Double,
         highHz: Double,
+        binHz: Double,
         sampleAtHz: (Double) -> Double
     ): Double {
         val safeLow = lowHz.coerceAtLeast(1.0)
         val safeHigh = highHz.coerceAtLeast(safeLow * 1.0001)
-        val ratio = safeHigh / safeLow
+        val safeBinHz = binHz.coerceAtLeast(0.001)
+        val firstBin = ceil(safeLow / safeBinHz).toInt().coerceAtLeast(1)
+        val lastBin = floor(safeHigh / safeBinHz).toInt()
+
         var power = 0.0
         var peak = 0.0
-        val sampleCount = 5
-        for (i in 0 until sampleCount) {
-            val position = (i + 0.5) / sampleCount.toDouble()
-            val hz = safeLow * ratio.pow(position)
-            val magnitude = sampleAtHz(hz).coerceAtLeast(0.0)
-            power += magnitude * magnitude
-            peak = max(peak, magnitude)
+        var samples = 0
+        if (lastBin >= firstBin) {
+            for (bin in firstBin..lastBin) {
+                val magnitude = sampleAtHz(bin * safeBinHz).coerceAtLeast(0.0)
+                power += magnitude * magnitude
+                peak = max(peak, magnitude)
+                samples++
+            }
+        } else {
+            // The requested band is narrower than one FFT bin. Sample its
+            // interior through interpolation instead of coercing it to a whole
+            // neighbouring bin (which can move a 55–62 Hz range to ~94 Hz on
+            // a 1024-point / 44.1 kHz Visualizer capture).
+            val ratio = safeHigh / safeLow
+            val sampleCount = 7
+            for (i in 0 until sampleCount) {
+                val position = (i + 0.5) / sampleCount.toDouble()
+                val hz = safeLow * ratio.pow(position)
+                val magnitude = sampleAtHz(hz).coerceAtLeast(0.0)
+                power += magnitude * magnitude
+                peak = max(peak, magnitude)
+                samples++
+            }
         }
-        val rms = sqrt(power / sampleCount.toDouble())
-        return max(rms, peak * 0.72)
+        if (samples == 0) return 0.0
+        val rms = sqrt(power / samples.toDouble())
+        // Retain narrow musical transients while still using all in-band energy.
+        return max(rms, peak * 0.82)
     }
 
     private fun smooth(previous: Float, target: Float, attack: Float, release: Float): Float {
@@ -1465,41 +1584,71 @@ class FloatingVisualizerService : Service() {
 
     private fun buildProjectionAudioRecorder(mp: MediaProjection): AudioRecord {
         val config = AudioPlaybackCaptureConfiguration.Builder(mp)
+            .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
             .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
             .addMatchingUsage(AudioAttributes.USAGE_GAME)
             .build()
-        val format = AudioFormat.Builder()
-            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-            .setSampleRate(SAMPLE_RATE)
-            .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
-            .build()
-        val minBuffer = AudioRecord.getMinBufferSize(
-            SAMPLE_RATE,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT
-        )
-        if (minBuffer <= 0) throw IllegalStateException("AudioRecord tidak mendukung format yang diminta")
-        val recorder = AudioRecord.Builder()
-            .setAudioFormat(format)
-            .setBufferSizeInBytes(max(minBuffer, fftSizeSetting * 4))
-            .setAudioPlaybackCaptureConfig(config)
-            .build()
-        if (recorder.state != AudioRecord.STATE_INITIALIZED) {
-            recorder.release()
-            throw IllegalStateException("Audio playback capture gagal diinisialisasi")
+
+        fun buildForChannel(channelMask: Int, channelCount: Int): AudioRecord? {
+            val minBuffer = AudioRecord.getMinBufferSize(
+                SAMPLE_RATE,
+                channelMask,
+                AudioFormat.ENCODING_PCM_16BIT
+            )
+            if (minBuffer <= 0) return null
+            val requiredPcmBytes = 4096 * channelCount * 2 // reserve for the maximum supported FFT/Hop
+            val recorder = try {
+                AudioRecord.Builder()
+                    .setAudioFormat(
+                        AudioFormat.Builder()
+                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                            .setSampleRate(SAMPLE_RATE)
+                            .setChannelMask(channelMask)
+                            .build()
+                    )
+                    .setBufferSizeInBytes(max(minBuffer, requiredPcmBytes))
+                    .setAudioPlaybackCaptureConfig(config)
+                    .build()
+            } catch (error: Exception) {
+                android.util.Log.w("FloatingDJ.Audio", "Playback capture channelCount=$channelCount unavailable", error)
+                return null
+            }
+            if (recorder.state != AudioRecord.STATE_INITIALIZED) {
+                recorder.release()
+                return null
+            }
+            projectionChannelCount = channelCount
+            projectionSampleRateHz = recorder.sampleRate.takeIf { it > 0 } ?: SAMPLE_RATE
+            return recorder
         }
-        return recorder
+
+        // Preserve channel phase information until after each channel has its own
+        // FFT. Averaging L/R PCM samples before the FFT can cancel anti-phase
+        // vocals, chorus, and stereo effects while leaving centred bass prominent.
+        val stereoRecorder = buildForChannel(AudioFormat.CHANNEL_IN_STEREO, 2)
+        if (stereoRecorder != null) {
+            android.util.Log.i("FloatingDJ.Audio", "MediaProjection playback capture initialized in stereo")
+            return stereoRecorder
+        }
+
+        val monoRecorder = buildForChannel(AudioFormat.CHANNEL_IN_MONO, 1)
+        if (monoRecorder != null) {
+            android.util.Log.w("FloatingDJ.Audio", "Stereo playback capture unavailable; falling back to mono. Stereo phase information may be reduced.")
+            return monoRecorder
+        }
+        throw IllegalStateException("Audio playback capture gagal diinisialisasi pada mode stereo maupun mono")
     }
 
     private fun logProjectionAnalysisSettings() {
         val fft = fftSizeSetting
         val hop = hopSizeSetting
+        val sampleRateHz = projectionSampleRateHz.coerceAtLeast(8000)
         android.util.Log.i(
             "FloatingDJ.Audio",
-            "MediaProjection FFT size=$fft, hop=$hop, " +
-                "window=${String.format(java.util.Locale.US, "%.1f", fft * 1000.0 / SAMPLE_RATE)}ms, " +
-                "hopInterval=${String.format(java.util.Locale.US, "%.1f", hop * 1000.0 / SAMPLE_RATE)}ms, " +
-                "resolution=${String.format(java.util.Locale.US, "%.2f", SAMPLE_RATE.toDouble() / fft)}Hz/bin, " +
+            "MediaProjection channels=$projectionChannelCount, sampleRate=$sampleRateHz Hz, FFT size=$fft, hop=$hop, " +
+                "window=${String.format(java.util.Locale.US, "%.1f", fft * 1000.0 / sampleRateHz)}ms, " +
+                "hopInterval=${String.format(java.util.Locale.US, "%.1f", hop * 1000.0 / sampleRateHz)}ms, " +
+                "resolution=${String.format(java.util.Locale.US, "%.2f", sampleRateHz.toDouble() / fft)}Hz/bin, " +
                 "overlap=${String.format(java.util.Locale.US, "%.1f", (1.0 - hop.toDouble() / fft) * 100.0)}%"
         )
     }
@@ -1528,62 +1677,223 @@ class FloatingVisualizerService : Service() {
         updateFloatingWindow()
         startBackupThread()
         setServiceActive(true)
-        broadcastStatus("BACKUP_ACTIVE: MediaProjection audio capture is active")
+        val captureChannels = if (projectionChannelCount >= 2) "stereo" else "mono fallback"
+        val captureRateKhz = String.format(java.util.Locale.US, "%.1f", projectionSampleRateHz / 1000.0)
+        broadcastStatus("BACKUP_ACTIVE: MediaProjection $captureChannels PCM · ${captureRateKhz} kHz · FFT $fftSizeSetting · Hop $hopSizeSetting")
         refreshNotification("MediaProjection backup audio active")
         return true
     }
 
     private fun restartProjectionCaptureForAnalysisSettings(): Boolean {
-        val mp = projection ?: return false
+        // FFT/Hop changes only alter the consumer window and read chunk size.
+        // Keep the current MediaProjection token and AudioRecord instance alive.
+        if (projection == null) return false
+        val recorder = audioRecord ?: return false
+        var workerStopped = false
         return try {
-            // Stop and join the old PCM thread before reallocating FFT work buffers.
-            releaseAudioRecordOnly()
+            backupRunning = false
+            backupGeneration += 1L
+            if (recorder.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                // stop() unblocks an outstanding READ_BLOCKING call. The existing
+                // AudioRecord can then be started again without reacquiring consent.
+                recorder.stop()
+            }
+
+            val oldThread = captureThread
+            if (oldThread != null && oldThread !== Thread.currentThread()) {
+                oldThread.join(1500L)
+                if (oldThread.isAlive) {
+                    throw IllegalStateException("Previous PCM analysis worker did not stop cleanly")
+                }
+            }
+            captureThread = null
+            workerStopped = true
+
             ensurePcmFftWorkspace()
-            val recorder = buildProjectionAudioRecorder(mp)
-            audioRecord = recorder
+            if (recorder.state != AudioRecord.STATE_INITIALIZED) {
+                throw IllegalStateException("The existing playback-capture AudioRecord is no longer initialized")
+            }
             recorder.startRecording()
+            if (recorder.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
+                throw IllegalStateException("The existing playback-capture AudioRecord did not resume")
+            }
+
             logProjectionAnalysisSettings()
             engineSource = EngineSource.PROJECTION
             startBackupThread()
             refreshNotification("MediaProjection analysis settings updated")
             true
         } catch (error: Exception) {
-            android.util.Log.e("FloatingDJ.Audio", "Unable to reconfigure MediaProjection FFT", error)
-            releaseAudioRecordOnly()
+            android.util.Log.e("FloatingDJ.Audio", "Unable to reconfigure MediaProjection FFT/Hop without replacing its capture session", error)
+
+            // Best-effort recovery uses the same recorder and projection session.
+            // Never tear down a valid permission session just because an analyzer
+            // setting could not be applied.
+            if (workerStopped) {
+                try {
+                    if (recorder.state == AudioRecord.STATE_INITIALIZED &&
+                        recorder.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
+                        recorder.startRecording()
+                    }
+                    if (recorder.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                        ensurePcmFftWorkspace()
+                        engineSource = EngineSource.PROJECTION
+                        startBackupThread()
+                        refreshNotification("MediaProjection capture retained after analysis update")
+                    }
+                } catch (recoveryError: Exception) {
+                    android.util.Log.e("FloatingDJ.Audio", "Unable to resume the retained MediaProjection AudioRecord", recoveryError)
+                }
+            }
             false
         }
     }
 
     private fun startBackupThread() {
+        val recorder = audioRecord ?: return
         ensurePcmFftWorkspace()
         val fftSize = fftSizeSetting
         val hopSize = normalizeHopSize(hopSizeSetting, fftSize)
         hopSizeSetting = hopSize
+        val channels = projectionChannelCount.coerceIn(1, 2)
+        val sampleRateHz = projectionSampleRateHz.coerceAtLeast(8000)
+
+        val generation = backupGeneration + 1L
+        backupGeneration = generation
         backupRunning = true
-        val recorder = audioRecord ?: return
         captureThread = Thread {
-            val frame = ShortArray(fftSize)
-            val chunk = ShortArray(hopSize)
-            var filled = 0
-            while (backupRunning) {
-                val read = try {
-                    recorder.read(chunk, 0, hopSize, AudioRecord.READ_BLOCKING)
-                } catch (e: Exception) {
-                    android.util.Log.e("FloatingDJ", "Backup read failed", e)
-                    -1
-                }
-                if (read <= 0) break
-                if (read > fftSize) continue
-                System.arraycopy(frame, read, frame, 0, fftSize - read)
-                System.arraycopy(chunk, 0, frame, fftSize - read, read)
-                filled = min(fftSize, filled + read)
-                if (filled < fftSize) continue
-                val levels = calculatePcmSpectrum(frame, fftSize)
-                publishLevels(levels)
+            // Keep the PCM window sample-exact. If FFT work falls behind the
+            // AudioRecord producer, drain complete queued hops into the rolling
+            // frame first, then analyse only the newest window. This prevents a
+            // growing queue of old FFT results from being rendered as live audio.
+            val frame = ShortArray(fftSize * channels)
+            val chunk = ShortArray(hopSize * channels)
+            var chunkFilledShorts = 0
+            var filledFrames = 0
+            var lastDiagnosticNanos = 0L
+            var lastPublishedNanos = 0L
+            var averageAnalysisMs = 0.0
+
+            fun appendCompletedHop() {
+                val newShortCount = hopSize * channels
+                val retainedShortCount = (fftSize - hopSize) * channels
+                System.arraycopy(frame, newShortCount, frame, 0, retainedShortCount)
+                System.arraycopy(chunk, 0, frame, retainedShortCount, newShortCount)
+                filledFrames = min(fftSize, filledFrames + hopSize)
             }
-            if (backupRunning && !stopping) {
+
+            try {
+                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO)
+            } catch (error: Exception) {
+                android.util.Log.w("FloatingDJ.Audio", "Could not set playback capture thread priority", error)
+            }
+
+            while (backupRunning && generation == backupGeneration) {
+                // First read blocks until one complete Hop is available. Any
+                // partial read is retained in chunkFilledShorts and completed.
+                while (backupRunning && generation == backupGeneration && chunkFilledShorts < chunk.size) {
+                    val read = try {
+                        recorder.read(
+                            chunk,
+                            chunkFilledShorts,
+                            chunk.size - chunkFilledShorts,
+                            AudioRecord.READ_BLOCKING
+                        )
+                    } catch (e: Exception) {
+                        android.util.Log.e("FloatingDJ.Audio", "Playback capture read failed", e)
+                        -1
+                    }
+                    if (read < 0) {
+                        android.util.Log.w("FloatingDJ.Audio", "Playback capture read ended with code $read")
+                        if (generation == backupGeneration) backupRunning = false
+                        break
+                    }
+                    if (read == 0) {
+                        try { Thread.sleep(1L) } catch (_: InterruptedException) {
+                            Thread.currentThread().interrupt()
+                            if (generation == backupGeneration) backupRunning = false
+                        }
+                        continue
+                    }
+                    chunkFilledShorts += read.coerceAtMost(chunk.size - chunkFilledShorts)
+                }
+                if (!backupRunning || generation != backupGeneration || chunkFilledShorts != chunk.size) break
+
+                appendCompletedHop()
+                chunkFilledShorts = 0
+                var drainedHops = 0
+                var drainFailed = false
+
+                // Consume already-buffered PCM without spending an FFT on each
+                // stale intermediate window. Keep a partial hop for the next
+                // blocking read so no interleaved samples are discarded.
+                while (backupRunning && generation == backupGeneration && drainedHops < 64) {
+                    var hopComplete = true
+                    while (backupRunning && generation == backupGeneration && chunkFilledShorts < chunk.size) {
+                        val read = try {
+                            recorder.read(
+                                chunk,
+                                chunkFilledShorts,
+                                chunk.size - chunkFilledShorts,
+                                AudioRecord.READ_NON_BLOCKING
+                            )
+                        } catch (e: Exception) {
+                            android.util.Log.e("FloatingDJ.Audio", "Non-blocking playback capture drain failed", e)
+                            -1
+                        }
+                        if (read < 0) {
+                            android.util.Log.w("FloatingDJ.Audio", "Playback capture drain ended with code $read")
+                            if (generation == backupGeneration) backupRunning = false
+                            drainFailed = true
+                            hopComplete = false
+                            break
+                        }
+                        if (read == 0) {
+                            hopComplete = false
+                            break
+                        }
+                        chunkFilledShorts += read.coerceAtMost(chunk.size - chunkFilledShorts)
+                    }
+                    if (drainFailed || !hopComplete || chunkFilledShorts < chunk.size) break
+                    appendCompletedHop()
+                    chunkFilledShorts = 0
+                    drainedHops++
+                }
+
+                if (!backupRunning || generation != backupGeneration) break
+                if (filledFrames < fftSize) continue
+
+                val analysisStartedNanos = System.nanoTime()
+                val levels = calculatePcmSpectrum(frame, fftSize, channels, sampleRateHz)
+                publishLevels(levels)
+                val nowNanos = System.nanoTime()
+                val analysisMs = (nowNanos - analysisStartedNanos) / 1_000_000.0
+                averageAnalysisMs = if (averageAnalysisMs == 0.0) analysisMs
+                    else averageAnalysisMs * 0.80 + analysisMs * 0.20
+
+                if (lastDiagnosticNanos == 0L || nowNanos - lastDiagnosticNanos >= 5_000_000_000L) {
+                    val publishIntervalMs = if (lastPublishedNanos == 0L) 0.0
+                        else (nowNanos - lastPublishedNanos) / 1_000_000.0
+                    android.util.Log.i(
+                        "FloatingDJ.Audio",
+                        "PCM live batchHops=${drainedHops + 1}, hop=${String.format(java.util.Locale.US, "%.2f", hopSize * 1000.0 / sampleRateHz)}ms, " +
+                            "publishInterval=${String.format(java.util.Locale.US, "%.2f", publishIntervalMs)}ms, " +
+                            "analysis=${String.format(java.util.Locale.US, "%.2f", analysisMs)}ms, " +
+                            "avgAnalysis=${String.format(java.util.Locale.US, "%.2f", averageAnalysisMs)}ms, " +
+                            "drainLimit=${drainedHops >= 64}"
+                    )
+                    lastDiagnosticNanos = nowNanos
+                }
+                lastPublishedNanos = nowNanos
+            }
+
+            // A worker invalidated by a settings update must not stop a newer
+            // worker or trigger the primary-source fallback.
+            if (generation == backupGeneration && !stopping &&
+                engineSource == EngineSource.PROJECTION && !switchingSource) {
                 mainHandler.post {
-                    if (engineSource == EngineSource.PROJECTION) {
+                    if (generation == backupGeneration && engineSource == EngineSource.PROJECTION &&
+                        !stopping && !switchingSource) {
                         broadcastStatus("BACKUP_ERROR: Audio playback capture stream ended")
                         switchingSource = true
                         stopProjectionResources()
@@ -1601,14 +1911,21 @@ class FloatingVisualizerService : Service() {
         }
     }
 
-    private fun calculatePcmSpectrum(samples: ShortArray, fftSize: Int): FloatArray {
+    private fun calculatePcmFftChannel(
+        interleavedSamples: ShortArray,
+        fftSize: Int,
+        channelIndex: Int,
+        channelCount: Int,
+        destinationMagnitudes: DoubleArray
+    ) {
         val real = pcmFftReal
         val imag = pcmFftImag
         val window = pcmHannWindow
+        val channel = channelIndex.coerceIn(0, channelCount - 1)
         real.fill(0.0)
         imag.fill(0.0)
         for (i in 0 until fftSize) {
-            val sample = samples[i].toDouble() / 32768.0
+            val sample = interleavedSamples[i * channelCount + channel].toDouble() / 32768.0
             real[i] = sample * window[i]
         }
         var j = 0
@@ -1647,14 +1964,46 @@ class FloatingVisualizerService : Service() {
             }
             length *= 2
         }
-
-        val result = FloatArray(MAX_BAR_COUNT + 2)
-        val nyquist = SAMPLE_RATE / 2.0
         val nyquistBin = fftSize / 2
-        fun magnitudeAtBin(bin: Int): Double {
-            val safe = bin.coerceIn(0, nyquistBin)
-            return sqrt(real[safe] * real[safe] + imag[safe] * imag[safe])
+        for (bin in 0..nyquistBin) {
+            destinationMagnitudes[bin] = sqrt(real[bin] * real[bin] + imag[bin] * imag[bin])
         }
+    }
+
+    private fun calculatePcmSpectrum(
+        samples: ShortArray,
+        fftSize: Int,
+        channelCountValue: Int,
+        sampleRateHzValue: Int
+    ): FloatArray {
+        val channelCount = channelCountValue.coerceIn(1, 2)
+        val sampleRateHz = sampleRateHzValue.coerceAtLeast(8000)
+        val magnitudeLeft = pcmMagnitudeLeft
+        val magnitudeRight = pcmMagnitudeRight
+        val magnitudeCombined = pcmMagnitudeCombined
+
+        // Compute raw channel magnitudes once. Both Horizontal and Single/DJ
+        // now use the same un-normalized PCM FFT magnitudes; each bank keeps its
+        // own fixed calibration below. This prevents an unrelated full-frame
+        // peak (for example a loud final vocal) from pumping down other bands.
+        calculatePcmFftChannel(samples, fftSize, 0, channelCount, magnitudeLeft)
+        if (channelCount >= 2) {
+            calculatePcmFftChannel(samples, fftSize, 1, channelCount, magnitudeRight)
+            for (bin in magnitudeCombined.indices) {
+                val left = magnitudeLeft[bin]
+                val right = magnitudeRight[bin]
+                // RMS magnitude combination is phase-independent and retains
+                // stereo-only vocal/transient content without favouring L or R.
+                magnitudeCombined[bin] = sqrt((left * left + right * right) * 0.5)
+            }
+        } else {
+            System.arraycopy(magnitudeLeft, 0, magnitudeCombined, 0, magnitudeCombined.size)
+        }
+
+        val result = FloatArray(SPECTRUM_FRAME_SIZE)
+        val nyquist = sampleRateHz / 2.0
+        val nyquistBin = fftSize / 2
+        fun magnitudeAtBin(bin: Int): Double = magnitudeCombined[bin.coerceIn(0, nyquistBin)]
         fun interpolatedMagnitude(hz: Double): Double {
             val position = (hz / nyquist * nyquistBin).coerceIn(0.0, nyquistBin.toDouble())
             val lower = floor(position).toInt().coerceIn(0, nyquistBin)
@@ -1666,33 +2015,38 @@ class FloatingVisualizerService : Service() {
         val spectrumMinHz = MIN_SPECTRUM_HZ
         val spectrumMaxHz = min(MAX_SPECTRUM_HZ, nyquist * 0.995).coerceAtLeast(spectrumMinHz + 1.0)
         val ratio = spectrumMaxHz / spectrumMinHz
+        val binHz = sampleRateHz.toDouble() / fftSize.toDouble()
         var power = 0.0
         for (band in 0 until MAX_BAR_COUNT) {
             val low = spectrumMinHz * ratio.pow(band.toDouble() / MAX_BAR_COUNT)
             val high = spectrumMinHz * ratio.pow((band + 1).toDouble() / MAX_BAR_COUNT)
-            val magnitude = measureLogBandMagnitude(low, high, ::interpolatedMagnitude)
-            val target = sqrt((magnitude / fftSize * 9.0).coerceIn(0.0, 1.0)).toFloat().coerceIn(0f, 1f)
+            val magnitude = measureLogBandMagnitude(low, high, binHz, ::interpolatedMagnitude)
+            // Fixed Hann-FFT calibration only. No frame-peak gain is applied,
+            // so frequency bands remain independent when the arrangement changes.
+            val normalizedMagnitude = (magnitude / fftSize * PCM_TO_VISUALIZER_LEVEL_SCALE).coerceIn(0.0, 1.0)
+            val target = sqrt(normalizedMagnitude).toFloat().coerceIn(0f, 1f)
             result[band] = target
             power += target.toDouble() * target.toDouble()
         }
 
         val lowBassHz = min(bassMinHz, bassMaxHz).toDouble()
         val highBassHz = max(bassMinHz, bassMaxHz).toDouble()
-        val binHz = SAMPLE_RATE.toDouble() / fftSize.toDouble()
         val fullRange = lowBassHz == 0.0 && highBassHz == 0.0
-        val firstBass = if (fullRange) 1 else
-            ceil(lowBassHz / binHz).toInt().coerceIn(1, (nyquistBin - 1).coerceAtLeast(1))
-        val lastBass = if (fullRange) (nyquistBin - 1).coerceAtLeast(firstBass) else
-            floor(highBassHz / binHz).toInt().coerceIn(firstBass, (nyquistBin - 1).coerceAtLeast(firstBass))
-        var bassPeak = 0.0
-        for (bin in firstBass..lastBass) bassPeak = max(bassPeak, magnitudeAtBin(bin))
-        result[MAX_BAR_COUNT] = (bassPeak / fftSize * 12.0).coerceIn(0.0, 1.0).pow(0.60).toFloat()
+        val bassLow = if (fullRange) binHz else lowBassHz
+        val bassHigh = if (fullRange) (nyquist - binHz).coerceAtLeast(bassLow * 1.0001) else highBassHz
+        val bassMagnitude = measureLogBandMagnitude(bassLow, bassHigh, binHz, ::interpolatedMagnitude)
+        val normalizedBass = (bassMagnitude / fftSize * PCM_SINGLE_RANGE_LEVEL_SCALE).coerceIn(0.0, 1.0)
+        result[MAX_BAR_COUNT] = normalizedBass.pow(0.60).toFloat()
         result[MAX_BAR_COUNT + 1] = sqrt(power / MAX_BAR_COUNT.toDouble()).toFloat().coerceIn(0f, 1f)
+        writeSingleFrequencyBank(result, sampleRateHz.toDouble(), fftSize.toDouble(), ::interpolatedMagnitude) { magnitude ->
+            (magnitude / fftSize * PCM_SINGLE_RANGE_LEVEL_SCALE).coerceIn(0.0, 1.0).pow(0.60).toFloat()
+        }
         return result
     }
 
     private fun releaseAudioRecordOnly() {
         backupRunning = false
+        backupGeneration += 1L
         val recorder = audioRecord
         audioRecord = null
         val thread = captureThread
@@ -1700,7 +2054,15 @@ class FloatingVisualizerService : Service() {
             try { recorder.stop() } catch (_: Exception) {}
         }
         if (thread != null && thread !== Thread.currentThread()) {
-            try { thread.join(500L) } catch (_: InterruptedException) { Thread.currentThread().interrupt() }
+            try {
+                thread.join(1500L)
+                if (thread.isAlive) {
+                    android.util.Log.w("FloatingDJ.Audio", "PCM worker was still stopping while AudioRecord resources were released")
+                    thread.interrupt()
+                }
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+            }
         }
         captureThread = null
         if (recorder != null) {
@@ -2369,6 +2731,9 @@ class FloatingVisualizerService : Service() {
             if (config.verticalMode) {
                 val oldLevel = meterLevel
                 val oldPeak = meterPeak
+                // Use the same response curve as Horizontal bars. Single/DJ
+                // already receives a dedicated frequency bank; it must not add
+                // a second, slower attack stage on top of the shared response.
                 val factor = if (targetMeterLevel >= meterLevel) attackFactor else releaseFactor
                 meterLevel += (targetMeterLevel - meterLevel) * factor
                 if (meterLevel > meterPeak) {
@@ -2412,23 +2777,87 @@ class FloatingVisualizerService : Service() {
             val end = (center * MAX_BAR_COUNT + halfWindow).coerceIn(0f, MAX_BAR_COUNT.toFloat())
             val first = floor(start.toDouble()).toInt().coerceIn(0, MAX_BAR_COUNT - 1)
             val last = floor((end - 0.0001f).coerceAtLeast(start).toDouble()).toInt().coerceIn(first, MAX_BAR_COUNT - 1)
-            var sum = 0f; var weight = 0f
+            var sum = 0f
+            var power = 0f
+            var weight = 0f
             for (band in first..last) {
                 val overlap = (min(end, band + 1f) - max(start, band.toFloat())).coerceAtLeast(0f)
-                if (overlap > 0f) { sum += source.getOrElse(band) { 0f } * overlap; weight += overlap }
+                if (overlap > 0f) {
+                    val value = source.getOrElse(band) { 0f }.coerceIn(0f, 1f)
+                    sum += value * overlap
+                    power += value * value * overlap
+                    weight += overlap
+                }
             }
-            return (sum / weight.coerceAtLeast(0.001f)).coerceIn(0f, 1f)
+            if (weight <= 0.001f) return 0f
+            val mean = sum / weight
+            val rms = sqrt(power / weight)
+            // Each rendered bar covers several of the fixed 64 analysis bands.
+            // A modest RMS floor preserves concentrated notes (vocal/bass)
+            // without turning the whole spectrum into a peak-only detector.
+            return max(mean, rms * 0.75f).coerceIn(0f, 1f)
         }
 
         private fun sampleSingleFrequencyRange(source: FloatArray): Float {
-            val low = min(config.bassMinHz, config.bassMaxHz)
-            val high = max(config.bassMinHz, config.bassMaxHz)
-            val fullRange = low == 0 && high == 0
+            val low = min(config.bassMinHz, config.bassMaxHz).toDouble()
+            val high = max(config.bassMinHz, config.bassMaxHz).toDouble()
+            val fullRange = low == 0.0 && high == 0.0
+            if (fullRange) return source.getOrElse(MAX_BAR_COUNT + 1) { 0f }.coerceIn(0f, 1f)
+
+            // New source frames contain a dedicated 256-band Single/DJ bank.
+            // Use the profile's own Hz range rather than averaging the coarser
+            // 64-band Horizontal map (which can suppress a 55-62 Hz kick range).
+            if (source.size > SINGLE_BIN_HZ_INDEX && source.size >= SPECTRUM_FRAME_SIZE) {
+                val binHz = source.getOrElse(SINGLE_BIN_HZ_INDEX) { 0f }.toDouble()
+                    .takeIf { it.isFinite() && it > 0.0 } ?: 0.0
+                var startHz = low.coerceAtLeast(MIN_SPECTRUM_HZ)
+                var endHz = high.coerceAtLeast(startHz)
+                val requestedWidth = (endHz - startHz).coerceAtLeast(0.001)
+                // A frequency range narrower than one FFT bin cannot be
+                // independently resolved. Expand it symmetrically to one real
+                // bin width rather than selecting a neighbouring bin or
+                // returning a weak/intermittent interpolated value.
+                if (binHz > requestedWidth && binHz.isFinite()) {
+                    val center = (startHz + endHz) * 0.5
+                    startHz = (center - binHz * 0.5).coerceAtLeast(MIN_SPECTRUM_HZ)
+                    endHz = (center + binHz * 0.5).coerceAtMost(MAX_SPECTRUM_HZ)
+                }
+                val ratio = MAX_SPECTRUM_HZ / MIN_SPECTRUM_HZ
+                val start = (ln(startHz / MIN_SPECTRUM_HZ) / ln(ratio) * SINGLE_SPECTRUM_BAND_COUNT)
+                    .coerceIn(0.0, SINGLE_SPECTRUM_BAND_COUNT - 0.001)
+                val end = (ln(endHz / MIN_SPECTRUM_HZ) / ln(ratio) * SINGLE_SPECTRUM_BAND_COUNT)
+                    .coerceIn(start + 0.001, SINGLE_SPECTRUM_BAND_COUNT.toDouble())
+                val first = floor(start).toInt().coerceIn(0, SINGLE_SPECTRUM_BAND_COUNT - 1)
+                val last = floor((end - 0.0001).coerceAtLeast(start)).toInt()
+                    .coerceIn(first, SINGLE_SPECTRUM_BAND_COUNT - 1)
+                var power = 0.0
+                var weight = 0.0
+                var peak = 0.0
+                for (band in first..last) {
+                    val overlap = (min(end, band + 1.0) - max(start, band.toDouble())).coerceAtLeast(0.0)
+                    if (overlap <= 0.0) continue
+                    val level = source.getOrElse(SINGLE_SPECTRUM_OFFSET + band) { 0f }
+                        .toDouble().coerceIn(0.0, 1.0)
+                    power += level * level * overlap
+                    weight += overlap
+                    peak = max(peak, level)
+                }
+                if (weight > 0.0) {
+                    val rms = sqrt(power / weight).toFloat().coerceIn(0f, 1f)
+                    // Keep short kick transients visible without replacing the
+                    // energy average with an unrestricted max detector.
+                    return max(rms, (peak * 0.94).toFloat()).coerceIn(0f, 1f)
+                }
+            }
+
+            // Backward-compatible fallback for legacy 66-value frames.
             val ratio = MAX_SPECTRUM_HZ / MIN_SPECTRUM_HZ
-            val startHz = if (fullRange) MIN_SPECTRUM_HZ else low.coerceAtLeast(MIN_SPECTRUM_HZ.toInt()).toDouble()
-            val endHz = if (fullRange) MAX_SPECTRUM_HZ else max(high, low).toDouble().coerceAtLeast(startHz)
-            val start = (ln(startHz / MIN_SPECTRUM_HZ) / ln(ratio) * MAX_BAR_COUNT).toFloat().coerceIn(0f, MAX_BAR_COUNT - 0.001f)
-            val end = (ln(endHz / MIN_SPECTRUM_HZ) / ln(ratio) * MAX_BAR_COUNT).toFloat().coerceIn(start + 0.001f, MAX_BAR_COUNT.toFloat())
+            val startHz = low.coerceAtLeast(MIN_SPECTRUM_HZ)
+            val endHz = high.coerceAtLeast(startHz)
+            val start = (ln(startHz / MIN_SPECTRUM_HZ) / ln(ratio) * MAX_BAR_COUNT).toFloat()
+                .coerceIn(0f, MAX_BAR_COUNT - 0.001f)
+            val end = (ln(endHz / MIN_SPECTRUM_HZ) / ln(ratio) * MAX_BAR_COUNT).toFloat()
+                .coerceIn(start + 0.001f, MAX_BAR_COUNT.toFloat())
             val first = floor(start.toDouble()).toInt().coerceIn(0, MAX_BAR_COUNT - 1)
             val last = floor((end - 0.0001f).coerceAtLeast(start).toDouble()).toInt().coerceIn(first, MAX_BAR_COUNT - 1)
             var total = 0f
@@ -3182,17 +3611,23 @@ class FloatingVisualizerService : Service() {
         if (levels.isEmpty()) return 0f
         val (start, end) = horizontalBandWindow(index, count)
         var weighted = 0f
+        var weightedPower = 0f
         var totalWeight = 0f
         val firstBand = floor(start.toDouble()).toInt().coerceIn(0, MAX_BAR_COUNT - 1)
         val lastBand = floor((end - 0.0001f).coerceAtLeast(start).toDouble()).toInt().coerceIn(firstBand, MAX_BAR_COUNT - 1)
         for (band in firstBand..lastBand) {
             val overlap = (min(end, band + 1f) - max(start, band.toFloat())).coerceAtLeast(0f)
             if (overlap > 0f) {
-                weighted += levels.getOrElse(band) { 0f }.coerceIn(0f, 1f) * overlap
+                val value = levels.getOrElse(band) { 0f }.coerceIn(0f, 1f)
+                weighted += value * overlap
+                weightedPower += value * value * overlap
                 totalWeight += overlap
             }
         }
-        return (weighted / totalWeight.coerceAtLeast(0.001f)).coerceIn(0f, 1f)
+        if (totalWeight <= 0.001f) return 0f
+        val mean = weighted / totalWeight
+        val rms = sqrt(weightedPower / totalWeight)
+        return max(mean, rms * 0.75f).coerceIn(0f, 1f)
     }
 
     private fun frequencyLabel(value: Double): String = if (value >= 1000.0) {

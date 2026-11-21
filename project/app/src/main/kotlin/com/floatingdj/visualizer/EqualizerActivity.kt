@@ -68,6 +68,7 @@ class EqualizerActivity : Activity() {
     private var pageScrollIndicator: EqVerticalIndicatorView? = null
     private val bandUiControls = mutableMapOf<Int, BandUiControl>()
     private var bandScrollable = false
+    private val eqMasterDependentControls = mutableListOf<View>()
     private var profiles = mutableListOf<EqProfile>()
     private var spinnerEntries = mutableListOf<EqProfile>()
     private val currentStateEntryId = "__working_current_state__"
@@ -102,11 +103,15 @@ class EqualizerActivity : Activity() {
         super.onCreate(savedInstanceState)
         repo = EqPresetRepository(this)
         loadThemeStudioSettings()
-        active = repo.loadCurrentState() ?: EqProfile("flat", "Flat")
+        active = repo.loadCurrentState() ?: EqProfile(currentStateEntryId, uiText("Current State", "Current State"))
         buildUi()
         loadPresets()
         restoreEngineIfEnabled()
         refreshCapability()
+        // First launch also receives a dedicated Current State record, so the
+        // first preset switch cannot accidentally treat a built-in Flat row as
+        // the only working state and lose the initial configuration.
+        if (repo.loadCurrentState() == null || active.id == currentStateEntryId) persistCurrentState()
         applyThemeStudio()
     }
 
@@ -231,6 +236,20 @@ class EqualizerActivity : Activity() {
         }
         view.thumb = thumb
         view.thumbOffset = dp(11)
+        view.progressTintList = ColorStateList.valueOf(themeAccent)
+        view.progressBackgroundTintList = ColorStateList.valueOf(trackColor())
+        view.thumbTintList = null
+        view.splitTrack = false
+    }
+    /** Horizontal mixer-style capsule used by the Bass Boost and Virtualizer faders. */
+    private fun applyEffectMixerThumb(view: SeekBar) {
+        view.thumb = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(lighten(themeAccent, 0.15f))
+            setStroke(dp(1), if (isLightUi) Color.parseColor("#8291A7") else 0xB8D5E0F3.toInt())
+            setSize(dp(34), dp(18))
+        }
+        view.thumbOffset = dp(17)
         view.progressTintList = ColorStateList.valueOf(themeAccent)
         view.progressBackgroundTintList = ColorStateList.valueOf(trackColor())
         view.thumbTintList = null
@@ -384,12 +403,14 @@ class EqualizerActivity : Activity() {
 
     private fun updatePresetStateStatus() {
         if (!::presetStateStatus.isInitialized) return
+        val currentStateSelected = active.id == currentStateEntryId || selectedPresetIndex == 0
         val dirty = isWorkingStateDirty()
         val profileName = profiles.firstOrNull { it.id == active.id }?.name ?: active.name
-        presetStateStatus.text = if (dirty) {
-            uiText("STATUS  ·  CURRENT STATE / BELUM DISIMPAN", "STATUS  ·  CURRENT STATE / NOT SAVED")
-        } else {
-            uiText("STATUS  ·  PRESET: $profileName", "STATUS  ·  PRESET: $profileName")
+        presetStateStatus.text = when {
+            currentStateSelected && dirty -> uiText("STATUS  ·  CURRENT STATE / PERUBAHAN TERBARU", "STATUS  ·  CURRENT STATE / LATEST EDITS")
+            currentStateSelected -> uiText("STATUS  ·  CURRENT STATE / TERSIMPAN", "STATUS  ·  CURRENT STATE / SAVED")
+            dirty -> uiText("STATUS  ·  CURRENT STATE / BELUM DISIMPAN", "STATUS  ·  CURRENT STATE / NOT SAVED")
+            else -> uiText("STATUS  ·  PRESET: $profileName", "STATUS  ·  PRESET: $profileName")
         }
         val color = if (dirty) Color.rgb(239, 83, 96) else Color.rgb(34, 197, 94)
         presetStateStatus.setTextColor(color)
@@ -714,11 +735,32 @@ class EqualizerActivity : Activity() {
         }
         presetRow.addView(plus, LinearLayout.LayoutParams(dp(52), dp(50)))
         content.addView(presetRow)
+        registerEqMasterDependentControl(presetRow)
         val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setPadding(0, dp(10), 0, dp(12)) }
         listOf(uiText("SIMPAN KE", "SAVE TO"), uiText("GANTI NAMA", "RENAME"), uiText("HAPUS", "DELETE"), "FLAT").forEachIndexed { i, t ->
-            actions.addView(button(t) { when (i) { 0 -> saveToPreset(); 1 -> promptName(uiText("Ganti Nama", "Rename")) { rename(it) }; 2 -> deleteCurrent(); 3 -> resetFlat() } }, LinearLayout.LayoutParams(0, dp(46), 1f).apply { marginEnd = dp(6) })
+            val actionButton = button(t) {
+                when (i) {
+                    0 -> saveToPreset()
+                    1 -> if (isBuiltInPreset(active)) {
+                        toast(uiText("Preset bawaan tidak dapat diganti nama. Gunakan Simpan Sebagai untuk membuat preset sendiri.", "Built-in presets cannot be renamed. Use Save As to create your own preset."))
+                    } else {
+                        promptName(uiText("Ganti Nama", "Rename")) { rename(it) }
+                    }
+                    2 -> confirmDeleteCurrent()
+                    3 -> resetFlat()
+                }
+            }.apply {
+                maxLines = 1
+                minLines = 1
+                includeFontPadding = false
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                setPadding(dp(2), dp(9), dp(2), dp(9))
+                setAutoSizeTextTypeUniformWithConfiguration(7, 10, 1, TypedValue.COMPLEX_UNIT_SP)
+            }
+            actions.addView(actionButton, LinearLayout.LayoutParams(0, dp(46), 1f).apply { marginEnd = dp(5) })
         }
         content.addView(actions)
+        registerEqMasterDependentControl(actions)
         addSectionDivider(content, 14, 12)
         sectionTitle(content, uiText("BAND EQUALIZER", "EQUALIZER BANDS"))
         bandCanvas = FrameLayout(this).apply {
@@ -749,11 +791,13 @@ class EqualizerActivity : Activity() {
             bandScrollIndicator?.invalidate()
         }
         content.addView(bandCanvas, LinearLayout.LayoutParams(-1, dp(480)))
+        registerEqMasterDependentControl(bandCanvas)
         bandScrollIndicator = EqHorizontalIndicatorView(horizontal).also { indicator ->
             content.addView(indicator, LinearLayout.LayoutParams(-1, dp(14)).apply {
                 topMargin = dp(5)
                 bottomMargin = dp(7)
             })
+            registerEqMasterDependentControl(indicator)
         }
         bandHint = label(uiText("Jumlah band mengikuti engine audio aktif. Ketuk nilai dB untuk memasukkan angka secara langsung; setiap band dapat di-reset ke 0 dB.", "Band count follows the active audio engine. Tap a dB value to enter it directly; each band can be reset to 0 dB."), 10f, muted).apply {
             setPadding(dp(10), dp(12), dp(10), dp(15)); gravity = Gravity.CENTER
@@ -766,26 +810,29 @@ class EqualizerActivity : Activity() {
         // EFFECTS SUPPORTED BY THE ACTIVE BACKEND
         addSectionDivider(content, 11, 7)
         val bassCard = effectCard(content, uiText("PENGUAT BASS", "BASS BOOST"))
+        registerEqMasterDependentControl(bassCard)
         bassSwitch = ThemePlaySwitch(this).apply { text = ""; contentDescription = uiText("Aktifkan Bass Boost", "Enable Bass Boost") }
         bassValue = label("0% · OFF", 11f, themeText, true).apply {
             contentDescription = uiText("Ketuk untuk memasukkan nilai Bass Boost", "Tap to enter Bass Boost value")
         }
         bassCard.addView(effectValueToggleRow(bassValue, bassSwitch))
-        bassSlider = SeekBar(this).apply { max = 1000; applyThumb(this) }
+        bassSlider = SeekBar(this).apply { max = 1000; applyEffectMixerThumb(this) }
         bassCard.addView(bassSlider, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(7) })
 
         addSectionDivider(content, 13, 5)
         val virtualCard = effectCard(content, "VIRTUALIZER")
+        registerEqMasterDependentControl(virtualCard)
         virtualSwitch = ThemePlaySwitch(this).apply { text = ""; contentDescription = uiText("Aktifkan Virtualizer", "Enable Virtualizer") }
         virtualValue = label("0% · OFF", 11f, themeText, true).apply {
             contentDescription = uiText("Ketuk untuk memasukkan nilai Virtualizer", "Tap to enter Virtualizer value")
         }
         virtualCard.addView(effectValueToggleRow(virtualValue, virtualSwitch))
-        virtualSlider = SeekBar(this).apply { max = 1000; applyThumb(this) }
+        virtualSlider = SeekBar(this).apply { max = 1000; applyEffectMixerThumb(this) }
         virtualCard.addView(virtualSlider, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(7) })
 
         addSectionDivider(content, 13, 5)
         val limiterCard = effectCard(content, "LIMITER")
+        registerEqMasterDependentControl(limiterCard)
         limiterSwitch = ThemePlaySwitch(this).apply { text = ""; contentDescription = uiText("Aktifkan Limiter", "Enable Limiter") }
         limiterValueLabel = label("−1 dBFS  ·  20:1", 11f, themeText, true).apply {
             gravity = Gravity.CENTER_VERTICAL
@@ -813,6 +860,7 @@ class EqualizerActivity : Activity() {
         })
 
         val preampCard = effectCard(content, "PREAMP").apply { tag = "eq_effect_card_preamp" }
+        registerEqMasterDependentControl(preampCard)
         preampSwitch = ThemePlaySwitch(this).apply {
             text = ""
             isChecked = false
@@ -914,7 +962,7 @@ class EqualizerActivity : Activity() {
                     if (checked) active.preampDb = applied
                     preampSlider.progress = ((active.preampDb + 12f) * 10f).roundToInt().coerceIn(0, 180)
                     updatePreampValue(active.preampDb, checked)
-                    persistCurrentState()
+                    persistCurrentState(force = true)
                     markWorkingStateSelected()
                 } else {
                     handlePreampApplyFailure()
@@ -928,7 +976,7 @@ class EqualizerActivity : Activity() {
                 if (applied != null) {
                     active.preampDb = applied
                     updatePreampValue(applied, true)
-                    persistCurrentState()
+                    persistCurrentState(force = true)
                     markWorkingStateSelected()
                 } else {
                     handlePreampApplyFailure()
@@ -936,7 +984,7 @@ class EqualizerActivity : Activity() {
             } else {
                 active.preampDb = requested
                 updatePreampValue(requested, false)
-                persistCurrentState()
+                persistCurrentState(force = true)
                 markWorkingStateSelected()
             }
         })
@@ -946,7 +994,7 @@ class EqualizerActivity : Activity() {
                 if (applied) {
                     active.bassEnabled = checked
                     updateStrengthValue(bassValue, active.bassStrength, checked, EqEngineController.bassStrengthSupported())
-                    persistCurrentState()
+                    persistCurrentState(force = true)
                     markWorkingStateSelected()
                 } else {
                     suppress = true; bassSwitch.isChecked = EqEngineController.bassEnabled(); suppress = false
@@ -960,7 +1008,7 @@ class EqualizerActivity : Activity() {
                 if (applied) {
                     active.virtualizerEnabled = checked
                     updateStrengthValue(virtualValue, active.virtualizerStrength, checked, EqEngineController.virtualizerStrengthSupported())
-                    persistCurrentState()
+                    persistCurrentState(force = true)
                     markWorkingStateSelected()
                 } else {
                     suppress = true; virtualSwitch.isChecked = EqEngineController.virtualizerEnabled(); suppress = false
@@ -970,11 +1018,11 @@ class EqualizerActivity : Activity() {
         }
         bassSlider.setOnSeekBarChangeListener(simpleListener {
             val v = EqEngineController.setBassStrength(it)
-            if (v >= 0) { active.bassStrength = v; updateStrengthValue(bassValue, v, active.bassEnabled, EqEngineController.bassStrengthSupported()); persistCurrentState(); markWorkingStateSelected() }
+            if (v >= 0) { active.bassStrength = v; updateStrengthValue(bassValue, v, active.bassEnabled, EqEngineController.bassStrengthSupported()); persistCurrentState(force = true); markWorkingStateSelected() }
         })
         virtualSlider.setOnSeekBarChangeListener(simpleListener {
             val v = EqEngineController.setVirtualizerStrength(it)
-            if (v >= 0) { active.virtualizerStrength = v; updateStrengthValue(virtualValue, v, active.virtualizerEnabled, EqEngineController.virtualizerStrengthSupported()); persistCurrentState(); markWorkingStateSelected() }
+            if (v >= 0) { active.virtualizerStrength = v; updateStrengthValue(virtualValue, v, active.virtualizerEnabled, EqEngineController.virtualizerStrengthSupported()); persistCurrentState(force = true); markWorkingStateSelected() }
         })
         preampValue.setOnClickListener {
             if (preampSwitch.isEnabled) showEffectValueDialog(
@@ -989,7 +1037,7 @@ class EqualizerActivity : Activity() {
                 } else active.preampDb = requested
                 preampSlider.progress = ((active.preampDb + 12f) * 10f).roundToInt().coerceIn(0, 180)
                 updatePreampValue(active.preampDb, active.preampEnabled)
-                persistCurrentState(); markWorkingStateSelected(); true
+                persistCurrentState(force = true); markWorkingStateSelected(); true
             }
         }
         bassValue.setOnClickListener {
@@ -1020,7 +1068,7 @@ class EqualizerActivity : Activity() {
                         active.bassStrength = applied
                         bassSlider.progress = applied
                         updateStrengthValue(bassValue, applied, active.bassEnabled, EqEngineController.bassStrengthSupported())
-                        persistCurrentState(); markWorkingStateSelected(); true
+                        persistCurrentState(force = true); markWorkingStateSelected(); true
                     }
                 )
             }
@@ -1053,7 +1101,7 @@ class EqualizerActivity : Activity() {
                         active.virtualizerStrength = applied
                         virtualSlider.progress = applied
                         updateStrengthValue(virtualValue, applied, active.virtualizerEnabled, EqEngineController.virtualizerStrengthSupported())
-                        persistCurrentState(); markWorkingStateSelected(); true
+                        persistCurrentState(force = true); markWorkingStateSelected(); true
                     }
                 )
             }
@@ -1063,7 +1111,7 @@ class EqualizerActivity : Activity() {
                 val applied = EqEngineController.setLimiterEnabled(checked)
                 if (applied) {
                     active.limiterEnabled = checked
-                    persistCurrentState()
+                    persistCurrentState(force = true)
                     markWorkingStateSelected()
                 } else {
                     suppress = true
@@ -1448,7 +1496,7 @@ class EqualizerActivity : Activity() {
         preampSlider.progress = ((active.preampDb + 12f) * 10f).roundToInt().coerceIn(0, 180)
         suppress = false
         updatePreampValue(active.preampDb, false)
-        persistCurrentState()
+        persistCurrentState(force = true)
         markWorkingStateSelected()
         if (mustStopEngine) {
             getSharedPreferences("eq_presets_v1", MODE_PRIVATE).edit().putBoolean("engine_enabled", false).apply()
@@ -1687,6 +1735,26 @@ class EqualizerActivity : Activity() {
         override fun onStartTrackingTouch(seekBar: SeekBar?) {}
         override fun onStopTrackingTouch(seekBar: SeekBar?) {}
     }
+    private fun registerEqMasterDependentControl(view: View) {
+        if (eqMasterDependentControls.none { it === view }) eqMasterDependentControls.add(view)
+    }
+
+    private fun setViewTreeEnabled(view: View, enabled: Boolean) {
+        view.isEnabled = enabled
+        if (view is ViewGroup) {
+            for (index in 0 until view.childCount) setViewTreeEnabled(view.getChildAt(index), enabled)
+        }
+    }
+
+    /** Gate all user-editable EQ controls from the master engine state. */
+    private fun updateEqMasterControlGate(enabled: Boolean) {
+        if (!enabled) presetPopup?.dismiss()
+        eqMasterDependentControls.forEach { control ->
+            setViewTreeEnabled(control, enabled)
+            control.alpha = if (enabled) 1f else 0.38f
+        }
+    }
+
     private fun refreshCapability() {
         val descriptors = EqEngineController.inventory()
         val eqNames = descriptors.filter { it.name.contains("equal", true) }
@@ -1696,11 +1764,12 @@ class EqualizerActivity : Activity() {
         val resolvedPresetBandCount = actual.size.takeIf { it in 1..32 } ?: cachedCount
         if (resolvedPresetBandCount != detectedPresetBandCount) loadPresets()
         val activeNow = EqEngineController.isActive()
+        updateEqMasterControlGate(activeNow)
         // Migrate old working profiles away from the unsafe global Preamp flag.
         // Keep the requested dB as dormant data, but never reapply it to session 0.
         if (!EqEngineController.preampAvailable() && active.preampEnabled) {
             active.preampEnabled = false
-            repo.saveCurrentState(active)
+            if (active.id == currentStateEntryId) persistCurrentState()
         }
         suppress = true; masterSwitch.isChecked = activeNow; suppress = false
         val baseStatus = if (actual.isNotEmpty()) {
@@ -1822,6 +1891,7 @@ class EqualizerActivity : Activity() {
     }
 
     private fun isWorkingStateDirty(): Boolean {
+        if (active.id == currentStateEntryId) return false
         val baseline = profiles.firstOrNull { it.id == active.id }
             ?: profiles.firstOrNull { it.id == "flat" }
             ?: EqProfile("flat", "Flat")
@@ -1829,10 +1899,15 @@ class EqualizerActivity : Activity() {
         val baselineMap = baseline.centersHz.zip(baseline.gainDb).toMap()
         val frequencies = currentMap.keys + baselineMap.keys
         val bandsDiffer = frequencies.any { hz -> kotlin.math.abs((currentMap[hz] ?: 0f) - (baselineMap[hz] ?: 0f)) > 0.01f }
+        // Unsupported Preamp is deliberately migrated to OFF; that capability
+        // migration is not a user edit and must not dirty/replace Current State.
+        val preampDiff = EqEngineController.preampAvailable() && (
+            active.preampEnabled != baseline.preampEnabled ||
+                kotlin.math.abs(active.preampDb - baseline.preampDb) > 0.01f
+            )
         return bandsDiffer || active.bassEnabled != baseline.bassEnabled || active.bassStrength != baseline.bassStrength ||
             active.virtualizerEnabled != baseline.virtualizerEnabled || active.virtualizerStrength != baseline.virtualizerStrength ||
-            active.limiterEnabled != baseline.limiterEnabled || active.preampEnabled != baseline.preampEnabled ||
-            kotlin.math.abs(active.preampDb - baseline.preampDb) > 0.01f
+            active.limiterEnabled != baseline.limiterEnabled || preampDiff
     }
 
     private fun ensureCurrentProfileHasBands(bands: List<EqEngineController.Band>) {
@@ -1844,10 +1919,21 @@ class EqualizerActivity : Activity() {
         }
     }
 
-    private fun persistCurrentState(captureFromEngine: Boolean = false) {
+    private fun persistCurrentState(captureFromEngine: Boolean = false, force: Boolean = false) {
         try {
+            // Activity pause/destroy is a safety net for real edits, not a reason
+            // to replace Current State merely because a different saved preset
+            // happens to be active. Explicit Flat reset uses force=true.
+            if (!force && active.id != currentStateEntryId && !isWorkingStateDirty()) return
             if (captureFromEngine) captureCurrent()
-            repo.saveCurrentState(active)
+            // Current State is an independent working snapshot. Editing a loaded
+            // preset must never overwrite that saved preset in the library.
+            repo.saveCurrentState(active.copy(
+                id = currentStateEntryId,
+                name = uiText("Current State", "Current State"),
+                centersHz = active.centersHz.toMutableList(),
+                gainDb = active.gainDb.toMutableList()
+            ))
             if (::presetStateStatus.isInitialized) updatePresetStateStatus()
         } catch (_: Throwable) {
             // Persistence is best-effort; never interrupt real-time audio slider interaction.
@@ -1936,7 +2022,7 @@ class EqualizerActivity : Activity() {
                 onGainCommitted = {
                     // Persist once at the end of a gesture, not for every MotionEvent.
                     // onPause also captures the engine read-back as a safety net.
-                    persistCurrentState(captureFromEngine = true)
+                    persistCurrentState(captureFromEngine = true, force = true)
                 }
             }
             column.addView(fader, LinearLayout.LayoutParams(-1, dp(312)).apply {
@@ -1967,16 +2053,26 @@ class EqualizerActivity : Activity() {
                 isFocusable = true
                 contentDescription = uiText("Reset band ${band.centerHz} Hz ke 0 dB", "Reset ${band.centerHz} Hz band to 0 dB")
                 setOnClickListener {
+                    val current = EqEngineController.bands().firstOrNull { it.index == band.index }?.levelMb ?: band.levelMb
                     val target = 0.coerceIn(band.minMb, band.maxMb)
-                    val applied = EqEngineController.setBand(band.index, target)
-                    if (applied == null) {
-                        toast(uiText("Band tidak dapat diubah pada engine saat ini", "This band cannot be changed on the current engine"))
-                    } else {
-                        fader.setGainMb(applied)
-                        value.text = String.format(java.util.Locale.US, "%.1f dB", applied / 100f)
-                        updateActiveBandValue(band.centerHz, applied)
-                        persistCurrentState()
-                        markWorkingStateSelected()
+                    showEqConfirmDialog(
+                        uiText("RESET BAND ${band.centerHz} Hz?", "RESET ${band.centerHz} Hz BAND?"),
+                        uiText(
+                            "Nilai band akan diubah dari ${String.format(java.util.Locale.US, "%+.1f", current / 100f)} dB menjadi ${String.format(java.util.Locale.US, "%+.1f", target / 100f)} dB. Hanya band ${band.centerHz} Hz yang berubah. Pengaturan band lain tetap aman.",
+                            "This band will change from ${String.format(java.util.Locale.US, "%+.1f", current / 100f)} dB to ${String.format(java.util.Locale.US, "%+.1f", target / 100f)} dB. Only the ${band.centerHz} Hz band changes; every other band stays untouched."
+                        ),
+                        uiText("BATAL", "CANCEL"), uiText("YA, RESET", "YES, RESET")
+                    ) {
+                        val applied = EqEngineController.setBand(band.index, target)
+                        if (applied == null) {
+                            toast(uiText("Band tidak dapat diubah pada engine saat ini", "This band cannot be changed on the current engine"))
+                        } else {
+                            fader.setGainMb(applied)
+                            value.text = String.format(java.util.Locale.US, "%.1f dB", applied / 100f)
+                            updateActiveBandValue(band.centerHz, applied)
+                            persistCurrentState(force = true)
+                            markWorkingStateSelected()
+                        }
                     }
                 }
             }
@@ -2146,7 +2242,7 @@ class EqualizerActivity : Activity() {
             val idx = active.centersHz.indexOf(b.centerHz)
             if (idx >= 0 && idx < active.gainDb.size) active.gainDb[idx] = latestPreviewMb / 100f
             else { active.centersHz.add(b.centerHz); active.gainDb.add(latestPreviewMb / 100f) }
-            persistCurrentState()
+            persistCurrentState(force = true)
             markWorkingStateSelected()
             committed = true
         }
@@ -2292,7 +2388,7 @@ class EqualizerActivity : Activity() {
             spinnerEntries.addAll(builtIns)
         }
         val selectedPreset = spinnerEntries.indexOfFirst { it.id == active.id }
-        selectedPresetIndex = if (isWorkingStateDirty() || selectedPreset < 0) 0 else selectedPreset
+        selectedPresetIndex = if (active.id == currentStateEntryId || isWorkingStateDirty() || selectedPreset < 0) 0 else selectedPreset
         updatePresetDropdownLabel()
         updatePresetStateStatus()
     }
@@ -2394,17 +2490,75 @@ class EqualizerActivity : Activity() {
                 presetPopup?.dismiss()
                 val chosen = spinnerEntries.getOrNull(index) ?: return@setOnClickListener
                 if (index == 0) {
-                    active = repo.loadCurrentState() ?: active
+                    val savedCurrent = repo.loadCurrentState() ?: captureCurrent().copy(
+                        id = currentStateEntryId,
+                        name = uiText("Current State", "Current State")
+                    )
+                    active = savedCurrent.copy(
+                        id = currentStateEntryId,
+                        name = uiText("Current State", "Current State"),
+                        centersHz = savedCurrent.centersHz.toMutableList(),
+                        gainDb = savedCurrent.gainDb.toMutableList()
+                    )
                     applyProfile(active)
-                } else {
+                    selectedPresetIndex = 0
+                    updatePresetDropdownLabel()
+                    updatePresetStateStatus()
+                    return@setOnClickListener
+                }
+
+                fun applyChosenPreset() {
                     active = chosen.copy(
                         centersHz = chosen.centersHz.toMutableList(),
                         gainDb = chosen.gainDb.toMutableList()
                     )
                     applyProfile(active)
+                    // Selecting a library preset does not replace Current State.
+                    // The next actual band/effect edit writes a fresh Current snapshot.
+                    loadPresets()
                 }
-                persistCurrentState()
-                loadPresets()
+
+                if (selectedPresetIndex == 0 || isWorkingStateDirty()) {
+                    showEqConfirmDialog(
+                        uiText("SIMPAN CURRENT STATE?", "SAVE CURRENT STATE?"),
+                        uiText(
+                            "Nilai band dan effect terakhir akan disimpan sebagai Current State sebelum membuka '${chosen.name}'. Current State tetap bisa dipilih kembali kapan saja. Jika memilih TIDAK, kamu akan kembali ke Current State tanpa membuka preset tersebut.",
+                            "Your latest band and effect values will be saved as Current State before opening '${chosen.name}'. You can return to Current State at any time. Choose NO to stay on Current State and not open this preset."
+                        ),
+                        uiText("TIDAK · KEMBALI", "NO · STAY CURRENT"),
+                        uiText("YA · SIMPAN & LANJUT", "YES · SAVE & CONTINUE"),
+                        onConfirm = {
+                            val snapshot = captureCurrent().copy(
+                                id = currentStateEntryId,
+                                name = uiText("Current State", "Current State"),
+                                centersHz = active.centersHz.toMutableList(),
+                                gainDb = active.gainDb.toMutableList()
+                            )
+                            repo.saveCurrentState(snapshot)
+                            applyChosenPreset()
+                        },
+                        onCancel = {
+                            // NO means return to the actual saved Current State, not
+                            // merely relabel the dropdown while leaving another preset active.
+                            val savedCurrent = repo.loadCurrentState() ?: captureCurrent().copy(
+                                id = currentStateEntryId,
+                                name = uiText("Current State", "Current State")
+                            )
+                            active = savedCurrent.copy(
+                                id = currentStateEntryId,
+                                name = uiText("Current State", "Current State"),
+                                centersHz = savedCurrent.centersHz.toMutableList(),
+                                gainDb = savedCurrent.gainDb.toMutableList()
+                            )
+                            applyProfile(active)
+                            selectedPresetIndex = 0
+                            updatePresetDropdownLabel()
+                            updatePresetStateStatus()
+                        }
+                    )
+                } else {
+                    applyChosenPreset()
+                }
             }
             row.alpha = 0f
             row.translationY = -dp(12).toFloat()
@@ -2586,7 +2740,8 @@ class EqualizerActivity : Activity() {
             suppress = true; masterSwitch.isChecked = false; suppress = false
         }
         refreshCapability()
-        repo.saveCurrentState(active)
+        // Applying a preset only changes the active EQ curve. The separately
+        // saved Current State snapshot is updated only by actual user edits.
         if (isWorkingStateDirty()) markWorkingStateSelected()
     }
     private fun interpolateGain(profile: EqProfile, targetHz: Int): Float? {
@@ -2605,102 +2760,390 @@ class EqualizerActivity : Activity() {
         return (lower.second + (upper.second - lower.second) * ratio.toFloat()).coerceIn(-15f, 15f)
     }
 
-    private fun saveToPreset() {
-        val targets = profiles.filter { it.id != "flat" }
-        if (targets.isEmpty()) {
-            val emptyDialog = AlertDialog.Builder(this)
-                .setTitle(uiText("Preset belum tersedia", "No saved presets yet"))
-                .setMessage(uiText("Belum ada preset tersimpan. Gunakan tombol + untuk membuat preset terlebih dahulu.", "There are no saved presets yet. Use the + button to create a preset first."))
-                .setNegativeButton(uiText("TUTUP", "CLOSE"), null)
-                .setPositiveButton(uiText("BUAT PRESET +", "CREATE PRESET +")) { _, _ ->
-                    promptName(uiText("Simpan Sebagai", "Save As")) { name -> saveAs(name) }
-                }
-                .create()
-            emptyDialog.setOnShowListener {
-                emptyDialog.window?.setBackgroundDrawable(panelDrawable(20))
-                emptyDialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(themeAccent)
-                emptyDialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(if (isLightUi) Color.parseColor("#526078") else Color.parseColor("#C6D1E2"))
-            }
-            emptyDialog.show()
-            return
+    private fun showEqConfirmDialog(
+        titleText: String,
+        messageText: String,
+        cancelText: String,
+        confirmText: String,
+        onCancel: () -> Unit = {},
+        onConfirm: () -> Unit
+    ): AlertDialog {
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(16), dp(18), dp(14))
+            background = panelDrawable(20)
         }
-
-        val list = ListView(this).apply {
-            divider = null
-            dividerHeight = 0
-            setBackgroundColor(Color.TRANSPARENT)
-            setPadding(dp(8), dp(6), dp(8), dp(8))
-            clipToPadding = false
-            adapter = object : ArrayAdapter<EqProfile>(this@EqualizerActivity, android.R.layout.simple_list_item_1, targets) {
-                override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                    val profile = getItem(position) ?: targets[position]
-                    val row = LinearLayout(this@EqualizerActivity).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        gravity = Gravity.CENTER_VERTICAL
-                        setPadding(dp(14), dp(10), dp(14), dp(10))
-                        background = panelDrawable(13)
-                        minimumHeight = dp(60)
-                    }
-                    val texts = LinearLayout(this@EqualizerActivity).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_VERTICAL }
-                    texts.addView(label(profile.name, 14f, themeText, true))
-                    texts.addView(label(uiText("Preset tersimpan · simpan konfigurasi saat ini di sini", "Saved preset · store the current configuration here"), 10f, muted))
-                    row.addView(texts, LinearLayout.LayoutParams(0, -2, 1f))
-                    row.addView(label("›", 22f, themeAccent, true).apply { gravity = Gravity.CENTER })
-                    return row
-                }
-            }
+        panel.addView(label(titleText, 15f, themeText, true).apply {
+            maxLines = 2
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            setPadding(0, 0, 0, dp(9))
+        })
+        panel.addView(label(messageText, 12f, if (isLightUi) Color.parseColor("#526078") else muted).apply {
+            setLineSpacing(dp(2).toFloat(), 1f)
+            includeFontPadding = false
+        }, LinearLayout.LayoutParams(-1, -2))
+        val footer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(0, dp(15), 0, 0)
         }
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(uiText("Simpan konfigurasi ke preset", "Save configuration to preset"))
-            .setView(list)
-            .setNegativeButton(uiText("BATAL", "CANCEL"), null)
-            .create()
-        list.setOnItemClickListener { _, _, which, _ ->
-            if (which in targets.indices) {
-                val target = targets[which]
-                val captured = captureCurrent()
-                active = captured.copy(
-                    id = target.id,
-                    name = target.name,
-                    centersHz = captured.centersHz.toMutableList(),
-                    gainDb = captured.gainDb.toMutableList()
-                )
-                repo.save(active)
-                repo.saveCurrentState(active)
-                loadPresets()
-                toast(uiText("Konfigurasi disimpan ke ${active.name}", "Configuration saved to ${active.name}"))
-            }
-            dialog.dismiss()
+        fun dialogButton(text: String): TextView = button(text) {}.apply {
+            setTextColor(if (isLightUi) Color.parseColor("#26344B") else themeText)
+            textSize = 10f * textScale
+            maxLines = 1
+            includeFontPadding = false
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            setPadding(dp(4), dp(10), dp(4), dp(10))
+            setAutoSizeTextTypeUniformWithConfiguration(8, 11, 1, TypedValue.COMPLEX_UNIT_SP)
         }
+        val cancel = dialogButton(cancelText)
+        // Select text color by measured contrast against both gradient stops.
+        // This keeps YES legible on light gold/custom accents as well as dark accents.
+        val confirmTop = lighten(themeAccent, 0.12f)
+        val confirmBottom = darken(themeAccent, 0.12f)
+        val darkConfirmText = Color.parseColor("#17243A")
+        val darkContrast = minOf(contrastRatio(darkConfirmText, confirmTop), contrastRatio(darkConfirmText, confirmBottom))
+        val whiteContrast = minOf(contrastRatio(Color.WHITE, confirmTop), contrastRatio(Color.WHITE, confirmBottom))
+        val confirmTextColor = if (darkContrast >= whiteContrast) darkConfirmText else Color.WHITE
+        val confirm = dialogButton(confirmText).apply {
+            background = roundedGradient(lighten(themeAccent, 0.12f), darken(themeAccent, 0.12f), themeAccent, 13)
+            setTextColor(confirmTextColor)
+        }
+        footer.addView(cancel, LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginEnd = dp(5) })
+        footer.addView(confirm, LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginStart = dp(5) })
+        panel.addView(footer)
+        val dialog = AlertDialog.Builder(this).setView(panel).create()
+        cancel.setOnClickListener { dialog.dismiss(); onCancel() }
+        confirm.setOnClickListener { dialog.dismiss(); onConfirm() }
         dialog.setOnShowListener {
-            dialog.window?.setBackgroundDrawable(panelDrawable(20))
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(if (isLightUi) Color.parseColor("#526078") else Color.parseColor("#C6D1E2"))
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+            val maxWidth = (resources.displayMetrics.widthPixels - dp(32)).coerceAtLeast(dp(250))
+            dialog.window?.setLayout(minOf(dp(460), maxWidth), ViewGroup.LayoutParams.WRAP_CONTENT)
+            dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         }
         dialog.show()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val maxWidth = (resources.displayMetrics.widthPixels - dp(32)).coerceAtLeast(dp(250))
+        dialog.window?.setLayout(minOf(dp(460), maxWidth), ViewGroup.LayoutParams.WRAP_CONTENT)
+        return dialog
     }
 
-    private fun saveCurrent() { captureCurrent(); repo.save(active); repo.saveCurrentState(active); loadPresets(); toast(uiText("Preset disimpan", "Preset saved")) }
-    private fun saveAs(name: String) { val copy = captureCurrent().copy(id = java.util.UUID.randomUUID().toString(), name = name); repo.save(copy); active = copy; repo.saveCurrentState(active); loadPresets(); toast(uiText("Preset baru disimpan", "New preset saved")) }
-    private fun rename(name: String) { if (active.id == "flat") { toast(uiText("Gunakan Simpan Sebagai untuk preset Flat", "Use Save As for the Flat preset")); return }; active.name = name; repo.save(active); repo.saveCurrentState(active); loadPresets() }
-    private fun deleteCurrent() { if (active.id == "flat") { toast(uiText("Preset Flat tidak dapat dihapus", "The Flat preset cannot be deleted")); return }; repo.delete(active.id); active = profiles.firstOrNull { it.id == "flat" } ?: EqProfile("flat", "Flat"); loadPresets(); applyProfile(active) }
-    private fun resetFlat() { active = EqProfile("flat", "Flat", EqEngineController.bands().map { it.centerHz }.toMutableList(), EqEngineController.bands().map { 0f }.toMutableList()); applyProfile(active); loadPresets(); persistCurrentState() }
-    private fun promptName(title: String, done: (String) -> Unit) {
-        val input = EditText(this).apply { inputType = InputType.TYPE_CLASS_TEXT; setSingleLine(true); setText(active.name); textSize = 14f * textScale; setTextColor(if (isLightUi) Color.parseColor("#26344B") else themeText) }
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(title)
-            .setView(input)
-            .setNegativeButton(uiText("BATAL", "CANCEL"), null)
-            .setPositiveButton("OK") { _, _ ->
-                val name = input.text.toString().trim()
-                if (name.isNotEmpty()) done(name)
+    private fun showSaveToPresetDialog(targets: List<EqProfile>) {
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), dp(12), dp(12), dp(10))
+            background = panelDrawable(20)
+        }
+        panel.addView(label(uiText("SIMPAN KE PRESET", "SAVE TO PRESET"), 14f, themeText, true).apply {
+            setPadding(dp(5), dp(4), dp(5), dp(4))
+        })
+        panel.addView(label(
+            uiText("PILIH TUJUAN SIMPAN · ${detectedPresetBandCount.coerceAtLeast(0)}-BAND", "CHOOSE SAVE TARGET · ${detectedPresetBandCount.coerceAtLeast(0)}-BAND"),
+            9f, muted, true
+        ).apply { letterSpacing = 0.08f; setPadding(dp(10), dp(9), dp(10), dp(7)) })
+        panel.addView(label(
+            uiText("Hanya preset buatan kamu yang kompatibel dengan jumlah band aktif. Preset bawaan 5/10-band tetap terlindungi.", "Only your saved presets matching the active band count are listed. Built-in 5/10-band presets remain protected."),
+            10f, muted
+        ).apply { setPadding(dp(10), dp(2), dp(10), dp(9)) })
+        val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(1), dp(2), dp(3), dp(4)) }
+        val scroll = ScrollView(this).apply {
+            isFillViewport = false
+            isVerticalScrollBarEnabled = false
+            isSmoothScrollingEnabled = true
+            isNestedScrollingEnabled = true
+            overScrollMode = View.OVER_SCROLL_NEVER
+            clipToPadding = false
+            setPadding(0, dp(7), 0, dp(7))
+            addView(list)
+        }
+        val dialog = AlertDialog.Builder(this).setView(panel).create()
+        if (targets.isEmpty()) {
+            panel.addView(label(
+                uiText("Belum ada preset buatan kamu yang kompatibel dengan ${detectedPresetBandCount.coerceAtLeast(0)} band. Gunakan BUAT PRESET untuk membuat tujuan simpan terlebih dahulu.", "You have no saved custom preset compatible with ${detectedPresetBandCount.coerceAtLeast(0)} bands. Choose CREATE PRESET to create a destination first."),
+                11f, muted
+            ).apply { setPadding(dp(6), dp(12), dp(6), dp(12)) })
+        } else {
+            targets.forEach { target ->
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(dp(13), dp(11), dp(13), dp(11))
+                    minimumHeight = dp(60)
+                    background = roundedGradient(
+                        if (isLightUi) Color.parseColor("#F6F8FC") else lighten(themeSurface, 0.05f),
+                        if (isLightUi) Color.parseColor("#E9EEF6") else darken(themeSurface, 0.14f),
+                        if (isLightUi) 0x557F8DA1 else 0x446D819F, 13
+                    )
+                    isClickable = true
+                    isFocusable = true
+                }
+                val textColumn = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_VERTICAL }
+                textColumn.addView(label(target.name, 14f, themeText, true).apply {
+                    maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                    includeFontPadding = false
+                    setAutoSizeTextTypeUniformWithConfiguration(11, 14, 1, android.util.TypedValue.COMPLEX_UNIT_SP)
+                })
+                textColumn.addView(label(uiText("Preset buatan kamu · ${target.centersHz.size} band", "Your preset · ${target.centersHz.size} bands"), 10f, muted).apply {
+                    maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; includeFontPadding = false
+                })
+                row.addView(textColumn, LinearLayout.LayoutParams(0, -2, 1f))
+                row.addView(label("›", 21f, themeAccent, true).apply { gravity = Gravity.CENTER }, LinearLayout.LayoutParams(dp(28), -1))
+                row.setOnClickListener {
+                    dialog.dismiss()
+                    val captured = captureCurrent()
+                    showEqConfirmDialog(
+                        uiText("TIMPA PRESET ${target.name}?", "OVERWRITE ${target.name}?"),
+                        uiText(
+                            "Konfigurasi EQ yang sedang aktif akan menggantikan preset tersimpan '${target.name}'. Preset bawaan tidak terpengaruh.",
+                            "Your current EQ configuration will replace the saved preset '${target.name}'. Built-in presets will not be changed."
+                        ),
+                        uiText("BATAL", "CANCEL"), uiText("YA, SIMPAN", "YES, SAVE")
+                    ) {
+                        active = captured.copy(
+                            id = target.id,
+                            name = target.name,
+                            centersHz = captured.centersHz.toMutableList(),
+                            gainDb = captured.gainDb.toMutableList()
+                        )
+                        repo.save(active)
+                        // Saving a named preset must not replace the independent Current State snapshot.
+                        loadPresets()
+                        toast(uiText("Konfigurasi disimpan ke ${active.name}", "Configuration saved to ${active.name}"))
+                    }
+                }
+                list.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6) })
             }
-            .create()
+            val maxScrollHeight = minOf(dp(330), (resources.displayMetrics.heightPixels - dp(300)).coerceAtLeast(dp(120)))
+            val estimatedListHeight = dp((targets.size * 68).coerceAtLeast(100))
+            val scrollHeight = minOf(maxScrollHeight, estimatedListHeight)
+            val scrollRow = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                clipChildren = false
+            }
+            scrollRow.addView(scroll, LinearLayout.LayoutParams(0, scrollHeight, 1f))
+            val indicator = EqVerticalIndicatorView(scroll)
+            scrollRow.addView(indicator, LinearLayout.LayoutParams(dp(21), scrollHeight).apply {
+                marginStart = dp(12)
+                marginEnd = dp(3)
+            })
+            scroll.setOnScrollChangeListener { _, _, _, _, _ -> indicator.refreshMetrics() }
+            val refreshSaveToIndicator = View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> indicator.refreshMetrics() }
+            scroll.addOnLayoutChangeListener(refreshSaveToIndicator)
+            list.addOnLayoutChangeListener(refreshSaveToIndicator)
+            indicator.post { indicator.refreshMetrics() }
+            panel.addView(scrollRow, LinearLayout.LayoutParams(-1, scrollHeight))
+        }
+        val footer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setPadding(0, dp(10), 0, 0) }
+        val close = button(uiText("TUTUP", "CLOSE"), {}).apply {
+            setTextColor(if (isLightUi) Color.parseColor("#26344B") else themeText)
+            textSize = 10f * textScale; maxLines = 1; includeFontPadding = false
+        }
+        footer.addView(close, LinearLayout.LayoutParams(0, dp(42), 1f).apply { marginEnd = dp(4) })
+        val create = button(uiText("BUAT PRESET +", "CREATE PRESET +"), {}).apply {
+            setTextColor(if (isLightUi) Color.parseColor("#26344B") else themeText)
+            textSize = 10f * textScale; maxLines = 1; includeFontPadding = false
+            background = roundedGradient(lighten(themeAccent, 0.12f), darken(themeAccent, 0.12f), themeAccent, 13)
+        }
+        footer.addView(create, LinearLayout.LayoutParams(0, dp(42), 1f).apply { marginStart = dp(4) })
+        panel.addView(footer)
+        close.setOnClickListener { dialog.dismiss() }
+        create.setOnClickListener {
+            dialog.dismiss()
+            promptName(uiText("Simpan Sebagai", "Save As")) { name -> saveAs(name) }
+        }
         dialog.setOnShowListener {
-            dialog.window?.setBackgroundDrawable(panelDrawable(20))
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(themeAccent)
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(if (isLightUi) Color.parseColor("#526078") else Color.parseColor("#C6D1E2"))
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+            val maxWidth = (resources.displayMetrics.widthPixels - dp(32)).coerceAtLeast(dp(250))
+            dialog.window?.setLayout(minOf(dp(460), maxWidth), ViewGroup.LayoutParams.WRAP_CONTENT)
         }
         dialog.show()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val maxWidth = (resources.displayMetrics.widthPixels - dp(32)).coerceAtLeast(dp(250))
+        dialog.window?.setLayout(minOf(dp(460), maxWidth), ViewGroup.LayoutParams.WRAP_CONTENT)
+    }
+
+    private fun saveToPreset() {
+        val compatibleCount = detectedPresetBandCount.takeIf { it > 0 } ?: EqEngineController.bands().size
+        val targets = profiles
+            .filter { !isBuiltInPreset(it) && it.centersHz.size == compatibleCount && it.gainDb.size == compatibleCount }
+            .asReversed()
+        showSaveToPresetDialog(targets)
+    }
+
+    private fun confirmDeleteCurrent() {
+        if (active.id == "flat" || isBuiltInPreset(active)) {
+            toast(uiText("Preset bawaan tidak dapat dihapus", "Built-in presets cannot be deleted"))
+            return
+        }
+        val name = active.name
+        showEqConfirmDialog(
+            uiText("HAPUS PRESET?", "DELETE PRESET?"),
+            uiText("Preset '$name' akan dihapus dari daftar preset buatan kamu. Tindakan ini tidak bisa dibatalkan.", "The saved preset '$name' will be removed from your custom preset list. This cannot be undone."),
+            uiText("BATAL", "CANCEL"), uiText("YA, HAPUS", "YES, DELETE")
+        ) { deleteCurrent() }
+    }
+
+    private fun saveCurrent() {
+        captureCurrent()
+        if (active.id == currentStateEntryId || isBuiltInPreset(active)) {
+            saveAs(uiText("Preset Saya", "My Preset"))
+            return
+        }
+        repo.save(active)
+        loadPresets()
+        toast(uiText("Preset disimpan", "Preset saved"))
+    }
+    private fun saveAs(name: String) {
+        val copy = captureCurrent().copy(
+            id = java.util.UUID.randomUUID().toString(),
+            name = name,
+            centersHz = active.centersHz.toMutableList(),
+            gainDb = active.gainDb.toMutableList()
+        )
+        repo.save(copy)
+        active = copy
+        loadPresets()
+        toast(uiText("Preset baru disimpan", "New preset saved"))
+    }
+    private fun rename(name: String) {
+        if (isBuiltInPreset(active)) {
+            toast(uiText("Preset bawaan tidak dapat diganti nama. Gunakan Simpan Sebagai untuk membuat preset sendiri.", "Built-in presets cannot be renamed. Use Save As to create your own preset."))
+            return
+        }
+        active.name = name
+        repo.save(active)
+        loadPresets()
+    }
+    private fun deleteCurrent() {
+        if (isBuiltInPreset(active)) {
+            toast(uiText("Preset bawaan tidak dapat dihapus", "Built-in presets cannot be deleted"))
+            return
+        }
+        repo.delete(active.id)
+        active = profiles.firstOrNull { it.id == "flat" } ?: EqProfile("flat", "Flat")
+        loadPresets()
+        applyProfile(active)
+    }
+    private fun resetFlat() {
+        val currentBands = EqEngineController.bands()
+        val nonZeroBands = currentBands.filter { kotlin.math.abs(it.levelMb) >= 1 }
+        val summary = if (nonZeroBands.isEmpty()) {
+            uiText("Semua band sudah berada di 0 dB. Tetap pilih preset Flat?", "All bands are already at 0 dB. Select the Flat preset anyway?")
+        } else {
+            val preview = nonZeroBands.take(8).joinToString("\n") { band ->
+                val before = band.levelMb / 100f
+                "${band.centerHz} Hz: ${if (before > 0) "+" else ""}${String.format(java.util.Locale.US, "%.1f", before)} dB  →  0.0 dB"
+            }
+            val remainder = if (nonZeroBands.size > 8) "\n… +${nonZeroBands.size - 8} ${uiText("band lainnya", "more bands")}" else ""
+            uiText(
+                "Preset Flat akan mengatur semua band ke 0 dB. Perubahan saat ini:\n$preview$remainder\n\nLanjutkan?",
+                "The Flat preset will set every band to 0 dB. Current changes:\n$preview$remainder\n\nContinue?"
+            )
+        }
+        showEqConfirmDialog(
+            uiText("RESET KE FLAT?", "RESET TO FLAT?"),
+            summary,
+            uiText("BATAL", "NO, CANCEL"),
+            uiText("YA, FLAT", "YES, FLAT")
+        ) {
+            active = EqProfile("flat", "Flat", currentBands.map { it.centerHz }.toMutableList(), currentBands.map { 0f }.toMutableList())
+            applyProfile(active)
+            loadPresets()
+            persistCurrentState(force = true)
+            markWorkingStateSelected()
+        }
+    }
+    private fun promptName(title: String, done: (String) -> Unit) {
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(16), dp(18), dp(14))
+            background = panelDrawable(20)
+        }
+        panel.addView(label(title, 15f, themeText, true).apply {
+            maxLines = 2
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            setPadding(0, 0, 0, dp(10))
+        })
+        val input = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            setSingleLine(true)
+            setText(active.name)
+            textSize = 14f * textScale
+            setTextColor(if (isLightUi) Color.parseColor("#26344B") else themeText)
+            setHintTextColor(muted)
+            hint = uiText("Nama preset", "Preset name")
+            setPadding(dp(12), dp(11), dp(12), dp(11))
+            background = roundedGradient(
+                if (isLightUi) Color.WHITE else darken(themeSurface, 0.12f),
+                if (isLightUi) Color.parseColor("#F0F3F8") else themeSurface,
+                if (isLightUi) 0x557F8DA1 else 0x667D91B8, 12
+            )
+            maxLines = 1
+            imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE
+        }
+        panel.addView(input, LinearLayout.LayoutParams(-1, dp(50)))
+        val footer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(0, dp(14), 0, 0)
+        }
+        fun promptButton(text: String, primary: Boolean = false) = button(text, {}).apply {
+            maxLines = 1
+            includeFontPadding = false
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            textSize = 10f * textScale
+            setPadding(dp(4), dp(10), dp(4), dp(10))
+            setAutoSizeTextTypeUniformWithConfiguration(8, 11, 1, TypedValue.COMPLEX_UNIT_SP)
+            if (primary) {
+                val confirmTop = lighten(themeAccent, 0.12f)
+                val confirmBottom = darken(themeAccent, 0.12f)
+                background = roundedGradient(confirmTop, confirmBottom, themeAccent, 13)
+                val darkText = Color.parseColor("#17243A")
+                val darkContrast = minOf(contrastRatio(darkText, confirmTop), contrastRatio(darkText, confirmBottom))
+                val whiteContrast = minOf(contrastRatio(Color.WHITE, confirmTop), contrastRatio(Color.WHITE, confirmBottom))
+                setTextColor(if (darkContrast >= whiteContrast) darkText else Color.WHITE)
+            } else {
+                setTextColor(if (isLightUi) Color.parseColor("#26344B") else themeText)
+            }
+        }
+        val cancel = promptButton(uiText("BATAL", "CANCEL"))
+        val save = promptButton(uiText("SIMPAN", "SAVE"), primary = true)
+        footer.addView(cancel, LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginEnd = dp(5) })
+        footer.addView(save, LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginStart = dp(5) })
+        panel.addView(footer)
+        val dialog = AlertDialog.Builder(this).setView(panel).create()
+        cancel.setOnClickListener { dialog.dismiss() }
+        save.setOnClickListener {
+            val name = input.text.toString().trim()
+            if (name.isNotEmpty()) {
+                dialog.dismiss()
+                done(name)
+            } else {
+                input.error = uiText("Nama tidak boleh kosong", "Name cannot be empty")
+            }
+        }
+        dialog.setOnShowListener {
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+            val maxWidth = (resources.displayMetrics.widthPixels - dp(32)).coerceAtLeast(dp(250))
+            dialog.window?.setLayout(minOf(dp(460), maxWidth), ViewGroup.LayoutParams.WRAP_CONTENT)
+            dialog.window?.setSoftInputMode(
+                android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
+            )
+            input.requestFocus()
+            input.post {
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+                imm?.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                input.selectAll()
+            }
+        }
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val maxWidth = (resources.displayMetrics.widthPixels - dp(32)).coerceAtLeast(dp(250))
+        dialog.window?.setLayout(minOf(dp(460), maxWidth), ViewGroup.LayoutParams.WRAP_CONTENT)
     }
     private fun exportPreset() {
         val options = mutableListOf<EqProfile>()
@@ -2802,13 +3245,29 @@ class EqualizerActivity : Activity() {
                     .setTitle(uiText("IMPOR PRESET EQ", "IMPORT EQ PRESET"))
                     .setMessage(uiText("Bagaimana preset ini akan digunakan?", "How would you like to use this preset?"))
                     .setPositiveButton(uiText("TERAPKAN KE CURRENT STATE", "APPLY TO CURRENT STATE")) { _, _ ->
-                        active = imported.copy(id = active.id, name = active.name, centersHz = imported.centersHz.toMutableList(), gainDb = imported.gainDb.toMutableList())
-                        repo.saveCurrentState(active); loadPresets(); applyProfile(active)
+                        active = imported.copy(
+                            id = currentStateEntryId,
+                            name = uiText("Current State", "Current State"),
+                            centersHz = imported.centersHz.toMutableList(),
+                            gainDb = imported.gainDb.toMutableList()
+                        )
+                        persistCurrentState()
+                        loadPresets()
+                        applyProfile(active)
+                        selectedPresetIndex = 0
+                        updatePresetDropdownLabel()
                     }
                     .setNeutralButton(uiText("SIMPAN SEBAGAI PRESET BARU", "SAVE AS NEW PRESET")) { _, _ ->
                         promptName(uiText("Nama preset baru", "New preset name")) { name ->
-                            active = imported.copy(id = java.util.UUID.randomUUID().toString(), name = name)
-                            repo.save(active); repo.saveCurrentState(active); loadPresets(); applyProfile(active)
+                            active = imported.copy(
+                                id = java.util.UUID.randomUUID().toString(),
+                                name = name,
+                                centersHz = imported.centersHz.toMutableList(),
+                                gainDb = imported.gainDb.toMutableList()
+                            )
+                            repo.save(active)
+                            loadPresets()
+                            applyProfile(active)
                         }
                     }
                     .setNegativeButton(uiText("BATAL", "CANCEL"), null)

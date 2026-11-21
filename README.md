@@ -9,7 +9,7 @@
 <p>
   <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&amp;logo=android&amp;logoColor=white" alt="Platform: Android">
   <img src="https://img.shields.io/badge/Language-Kotlin-7F52FF?style=for-the-badge&amp;logo=kotlin&amp;logoColor=white" alt="Language: Kotlin">
-  <img src="https://img.shields.io/badge/Version-v3.0.18-2563EB?style=for-the-badge" alt="Version 3.0.18">
+  <img src="https://img.shields.io/badge/Version-v3.0.19.0-2563EB?style=for-the-badge" alt="Version 3.0.19.0">
   <a href="https://github.com/tyron12233/CodeAssist">
     <img src="https://img.shields.io/badge/IDE-CodeAssist-24292F?style=for-the-badge&amp;logo=github&amp;logoColor=white" alt="Built with CodeAssist">
   </a>
@@ -134,7 +134,7 @@ Floating DJ Visualizer adalah aplikasi Android yang dikembangkan oleh **Rifki**.
 
 Proyek ini dikembangkan langsung melalui perangkat Android menggunakan [CodeAssist IDE](https://github.com/tyron12233/CodeAssist) yang bersifat open-source.
 
-> **Project status / Status proyek:** V3.0.18 is the current documented development line. The Equalizer Engine is experimental and device-dependent. / V3.0.18 adalah lini pengembangan yang didokumentasikan saat ini. Equalizer Engine masih eksperimental dan bergantung pada perangkat.
+> **Project status / Status proyek:** V3.0.19.0 is the current documented development line. The Equalizer Engine is experimental and device-dependent. / V3.0.19.0 adalah lini pengembangan yang didokumentasikan saat ini. Equalizer Engine masih eksperimental dan bergantung pada perangkat.
 
 ---
 
@@ -245,12 +245,14 @@ Riwayat ini disusun dari lini pengembangan terbaru menuju milestone proyek sebel
 
 ---
 
-### Latest Development Line | V3.0.10–V3.0.18
+### Latest Development Line | V3.0.10–V3.0.19.0
 
-**The current Version 3 development line** — from output-safety refinements to the latest Equalizer, Display, scrolling, and interface improvements.
+**The current Version 3 development line** — from output-safety refinements to the latest Equalizer, Display, scrolling, interface, and real-time audio-response improvements.
 
-**Lini pengembangan Versi 3 saat ini** — dari penyempurnaan keamanan output hingga pembaruan Equalizer, Display, scrolling, dan antarmuka terbaru.
+**Lini pengembangan Versi 3 saat ini** — dari penyempurnaan keamanan output hingga pembaruan Equalizer, Display, scrolling, antarmuka, dan respons audio real-time terbaru.
 
+- **V3.0.19.0 — Real-Time PCM Catch-Up & Faster Response:** Prevented stale MediaProjection PCM backlog from keeping the visualizer behind live playback, introduced a faster time-based attack/release response curve shared by Live Display and Floating layers, preserved the existing low/mid/high frequency-analysis paths, and added PCM worker diagnostics.
+- **V3.0.18.9 — Main Header Light Sweep & Theme Studio Sparkle:** Added a diagonal light sweep and restrained sparkle particles over the main-page title, with Theme Studio-aware colors and lifecycle-controlled animation.
 - **V3.0.18 — Display Geometry & EQ Polish:** Expanded EQ presets and refined Band Analyzer filtering, Live Display geometry, scroll rails, first-open rail visibility, theme-aware toasts, spacing, and animations.
 - **V3.0.17 — Import & Workflow Validation:** Improved backup/import validation, runtime-permission review, scene status, layer-position controls, and mode-safe parameter linking.
 - **V3.0.16 — Multi-Layer Linking:** Added per-slider linking across compatible layers, global FFT/Hop explanations, and more consistent theme-aware notification controls.
@@ -299,6 +301,33 @@ V1.x menjadi fondasi awal floating audio visualizer. Untuk rincian fitur V1 dan 
 The summaries above are intentionally compact. Open a milestone below to read its expanded notes.
 
 Ringkasan di atas sengaja dibuat singkat. Buka milestone di bawah untuk membaca rincian implementasi yang lebih lengkap.
+
+<details>
+<summary><strong>V3.0.19.0</strong> — Real-Time PCM catch-up, faster response, and audio diagnostics</summary>
+
+**EN**
+- Update the MediaProjection PCM worker to drain already-buffered complete Hop blocks into the rolling 4096-sample window before running the next FFT. This preserves PCM sample order and the rolling history while publishing only the newest complete window when intermediate FFT windows have become stale.
+- Bound the additional catch-up drain to 64 Hops per pass to avoid an unbounded drain loop. When no backlog exists, analysis continues at the configured Hop cadence.
+- Replace the legacy 20 Hz-derived smoothing curve with direct time constants evaluated using actual frame delta time. At Response 41%, the approximate attack and release time constants are 16.6 ms and 38.9 ms.
+- Use the same response equation in MainActivity Live Display and FloatingVisualizerService layer rendering to keep their response behavior aligned across display refresh rates.
+- Preserve FFT 4096, Hop 256, stereo L/R transforms, RMS magnitude combination, the dedicated 256-band Single/DJ frequency bank, the Horizontal 64-band log map, selected frequency ranges, and existing fixed per-route calibration.
+- Do not add frame-peak, content-dependent, or whole-spectrum gain normalization.
+- Add periodic `FloatingDJ.Audio` / `PCM live` diagnostics containing `batchHops`, configured Hop interval, publish interval, current/average analysis time, and whether the catch-up drain limit was reached.
+- Keep the technical limit explicit: Hop 256 at 44.1 kHz is a 5.80 ms analysis step, not a guaranteed 5.80 ms screen-to-screen latency. FFT 4096 remains a 92.9 ms analysis window with approximately 10.77 Hz/bin spacing at 44.1 kHz.
+- Preserve `versionName 3.0.19.0` and `versionCode 105`.
+
+**ID**
+- Memperbarui worker PCM MediaProjection agar membaca blok Hop lengkap yang sudah tersedia di buffer dan memasukkannya ke rolling window 4096 sampel sebelum menjalankan FFT berikutnya. Urutan sampel PCM dan riwayat rolling window tetap dipertahankan; ketika jendela FFT perantara sudah tertinggal, hanya jendela terbaru yang dianalisis dan dipublikasikan.
+- Membatasi proses catch-up tambahan hingga 64 Hop per putaran agar proses drain tidak berjalan tanpa batas. Ketika tidak ada antrean, analisis tetap berjalan mengikuti cadence Hop yang dikonfigurasi.
+- Mengganti kurva smoothing lama yang diturunkan dari referensi 20 Hz dengan time constant langsung yang dihitung menggunakan delta waktu frame aktual. Pada Response 41%, perkiraan time constant attack dan release masing-masing adalah 16,6 ms dan 38,9 ms.
+- Menggunakan persamaan respons yang sama pada Live Display MainActivity dan rendering layer FloatingVisualizerService agar perilaku keduanya selaras pada berbagai refresh rate layar.
+- Mempertahankan FFT 4096, Hop 256, transformasi stereo L/R, kombinasi magnitudo RMS, frequency bank Single/DJ khusus 256-band, peta log Horizontal 64-band, rentang frekuensi pilihan, serta kalibrasi tetap per jalur yang sudah ada.
+- Tidak menambahkan normalisasi gain berbasis frame-peak, content-dependent, atau whole-spectrum.
+- Menambahkan diagnostik berkala `FloatingDJ.Audio` / `PCM live` yang memuat `batchHops`, interval Hop yang dikonfigurasi, interval publikasi, waktu analisis saat ini/rata-rata, dan informasi apakah batas drain catch-up tercapai.
+- Memperjelas batas teknis: Hop 256 pada 44,1 kHz merupakan langkah analisis 5,80 ms, bukan jaminan latency visual layar-ke-layar sebesar 5,80 ms. FFT 4096 tetap menggunakan jendela analisis 92,9 ms dengan jarak sekitar 10,77 Hz/bin pada 44,1 kHz.
+- Mempertahankan `versionName 3.0.19.0` dan `versionCode 105`.
+
+</details>
 
 <details>
 <summary><strong>V3.0.18</strong> — Display geometry, scroll rails, EQ presets, and UI polish</summary>

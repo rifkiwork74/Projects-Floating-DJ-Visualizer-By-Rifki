@@ -42,6 +42,7 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/txtVisualizerTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:letterSpacing="0.055"
@@ -108,7 +109,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="BACKUP AUDIO CAPTURE"
+                    android:text="ENGINE AUDIO CAPTURE · M.PROJ"
                     android:textColor="#F6F7FC"
                     android:textSize="12sp"
                     android:textStyle="bold" />

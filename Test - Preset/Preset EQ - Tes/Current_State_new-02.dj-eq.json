@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "presetId": "__working_current_state__",
+  "name": "Current State",
+  "eq": {
+    "centersHz": [
+      31,
+      62,
+      125,
+      250,
+      500,
+      1000,
+      2000,
+      4000,
+      8000,
+      16000
+    ],
+    "gainDb": [
+      8,
+      5,
+      -2,
+      0.88,
+      2.5,
+      2,
+      1.7,
+      2,
+      0,
+      -2
+    ]
+  },
+  "preamp": {
+    "enabled": false,
+    "gainDb": 0
+  },
+  "preampDb": 0,
+  "bassBoost": {
+    "enabled": false,
+    "strength": 0
+  },
+  "virtualizer": {
+    "enabled": true,
+    "strength": 60
+  },
+  "limiter": {
+    "enabled": false
+  }
+}

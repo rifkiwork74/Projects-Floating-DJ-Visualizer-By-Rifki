@@ -1,9 +1,9 @@
 {
   "format": "com.floatingdj.floating-scene",
   "schema_version": 1,
-  "name": "Scene 4 • current app",
-  "selected_profile_id": "root",
-  "floating_overlay_requested": false,
+  "name": "Scene 3 • Calm vocal",
+  "selected_profile_id": "layer_ec19c6bc",
+  "floating_overlay_requested": true,
   "layers": [
     {
       "id": "root",
@@ -26,12 +26,12 @@
       "opacity": 100,
       "shadow_opacity": 100,
       "glow": 100,
-      "response_speed": 100,
+      "response_speed": 41,
       "corner_radius": 0,
       "vertical_mode": true,
       "single_audio_mode": "DJ",
-      "bass_min_hz": 1000,
-      "bass_max_hz": 1000,
+      "bass_min_hz": 950,
+      "bass_max_hz": 1200,
       "horizontal_alignment": "LEFT",
       "mirror_mode": "OFF",
       "position_x": 0,
@@ -44,7 +44,8 @@
         "GLOSSY": 35,
         "NEON": 100,
         "GLASS": 62
-      }
+      },
+      "slider_links": {}
     },
     {
       "id": "layer_dcc57108",
@@ -67,12 +68,12 @@
       "opacity": 100,
       "shadow_opacity": 100,
       "glow": 100,
-      "response_speed": 100,
+      "response_speed": 41,
       "corner_radius": 0,
       "vertical_mode": true,
       "single_audio_mode": "DJ",
-      "bass_min_hz": 1000,
-      "bass_max_hz": 1000,
+      "bass_min_hz": 950,
+      "bass_max_hz": 1200,
       "horizontal_alignment": "LEFT",
       "mirror_mode": "OFF",
       "position_x": 0,
@@ -85,9 +86,52 @@
         "GLOSSY": 35,
         "NEON": 100,
         "GLASS": 24
-      }
+      },
+      "slider_links": {}
+    },
+    {
+      "id": "layer_ec19c6bc",
+      "name": "Profile 3",
+      "default": false,
+      "colors": [
+        "#001F54",
+        "#0077B6",
+        "#00B4D8",
+        "#90E0EF",
+        "#FFFFFF"
+      ],
+      "effect": "NEON",
+      "width": 320,
+      "height": 332,
+      "bar_count": 15,
+      "bar_width": 38,
+      "bar_gap": 25,
+      "scale": 95,
+      "opacity": 100,
+      "shadow_opacity": 100,
+      "glow": 100,
+      "response_speed": 40,
+      "corner_radius": 63,
+      "vertical_mode": false,
+      "single_audio_mode": "DJ",
+      "bass_min_hz": 1000,
+      "bass_max_hz": 1000,
+      "horizontal_alignment": "LEFT",
+      "mirror_mode": "OFF",
+      "position_x": 0,
+      "position_y": 86,
+      "position_mode": "STATIC",
+      "rotation_degrees": 90,
+      "visible": true,
+      "effect_glow_values": {
+        "CLEAN": 0,
+        "GLOSSY": 35,
+        "NEON": 100,
+        "GLASS": 62
+      },
+      "slider_links": {}
     }
   ],
-  "updated_at": 1794465343938,
-  "id": "scene_71b90741-4"
+  "updated_at": 1795131087367,
+  "id": "scene_e1e2a113-8"
 }

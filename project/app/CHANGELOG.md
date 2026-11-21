@@ -1,3 +1,116 @@
+## V3.0.19.0 — Real-Time PCM Catch-Up & Faster Response (versionCode 105)
+- **Prevent stale PCM backlog:** Keep MediaProjection's rolling FFT window sample-exact, but drain already-buffered complete Hop blocks before running the next FFT. When analysis briefly falls behind the 5.8 ms input cadence, intermediate windows are skipped and only the newest complete 4096-sample window is published; PCM samples are not dropped from the rolling window.
+- **Faster response curve:** Replace the legacy 20 Hz-derived smoothing curve with direct time constants. At Response 41%, attack is approximately 16.6 ms and release 38.9 ms, evaluated against actual display-frame delta time.
+- **Live/Floating parity:** Apply the same response curve to MainActivity Live Display and FloatingVisualizerService layer rendering so the preview does not feel slower than the overlay.
+- **Keep frequency analysis intact:** Preserve stereo L/R FFT, 4096-point frequency resolution, 256-point Hop, the dedicated 256-band Single/DJ bank, the 55–62 Hz measurement path, and fixed per-route calibration. No frame-peak or content-dependent gain normalization is introduced.
+- **Diagnostics:** Add periodic MediaProjection worker metrics for processed Hop batches, configured Hop interval, publish interval, current/average FFT analysis time, and whether the bounded catch-up drain limit was reached.
+- **Limits:** Hop 256 at 44.1 kHz is a 5.80 ms analysis step, not a 5.80 ms guaranteed screen-to-screen latency. FFT 4096 remains a 92.9 ms window for low-frequency resolution; the UI animation is rendered at the device's display refresh cadence.
+- **Version:** `versionName 3.0.19.0`, `versionCode 105`.
+
+## V3.0.18.9 — Main Header Light Sweep & Theme Studio Sparkle (versionCode 104)
+- Add a diagonal light sweep and restrained sparkle particles over the main-page `FLOATING DJ` title, based on the uploaded visual reference.
+- Synchronize the shine with the existing animated title gradient using one `ValueAnimator`; Android's Choreographer schedules frames against the display refresh cadence instead of forcing a fixed frame rate.
+- Derive the accent and edge colors from the active Theme Studio palette. CUSTOM uses its selected accent and edge; built-in themes retain their own palette.
+- Run the effect only while the Visualizer reports ACTIVE and the Activity is in the foreground. Cancel/reset it on pause, stop, and destroy.
+- Keep the drawing lightweight: small deterministic particles, simple layered strokes, no animated bitmap, no runtime blur, and no additional thread.
+- No changes to audio capture, FFT/Hop analysis, EQ processing, FloatingVisualizerService, overlay rendering, or saved profile data.
+- **Version:** `versionName 3.0.18.9`, `versionCode 104`.
+
+## V3.0.18.8 — EQ Control Gating, Themed Rename Contrast & Animated Theme Title (versionCode 103)
+- **Compile fix:** Correct the animated title gradient minimum-width conversion to use the existing `Int.dp()` extension (`80.dp()`), resolving the receiver-type mismatch from `dp(80)` without changing runtime behavior or the release version.
+
+- **Save To scroll rail:** Add the same visible vertical scroll indicator used by the preset dropdown to the Save To dialog. Keep its viewport bounded by the available screen height on compact displays.
+- **Rename dialog contrast:** Select the SAVE button text color by comparing dark and white text contrast against both accent-gradient stops. A bright Studio Custom accent now uses dark text instead of unreadable white text.
+- **EQ OFF master gate:** Disable the preset selector, Save As (+), Save To, Rename, Delete, Flat, band faders, and editable effect panels while the EQ master engine is OFF. Disabled controls use a muted/greyed presentation. Capability-specific unsupported controls remain disabled when EQ is ON.
+- **Flat confirmation:** Require a themed Yes/No confirmation before applying Flat. The message previews current non-zero band levels (up to eight entries plus a remainder count) and explains that all bands will become 0 dB.
+- **Capture source wording:** Rename the main-page toggle label to “ENGINE AUDIO CAPTURE · M.PROJ” and localize it as “MESIN AUDIO CAPTURE · M.PROJ”.
+- **Animated title:** Apply a horizontal multi-stop gradient derived from the active Theme Studio accent; CUSTOM additionally uses its selected edge color. The gradient is static when Visualizer is stopped/starting and sweeps left-to-right only while the Visualizer reports ACTIVE. The animator is canceled while the Activity is paused and on destroy.
+- **Audio engine protection:** No FloatingVisualizerService, FFT, Hop, stereo analysis, M.Projection capture, EQ processing engine, or spectrum calibration implementation was changed.
+- **Version:** `versionName 3.0.18.8`, `versionCode 103`.
+
+## V3.0.18.7 — Current State Preset Flow, Linked Layers & Restart Restore (versionCode 102)
+
+- **High-contrast confirmation action:** Calculate the minimum contrast of the YES button text against both Theme Studio accent-gradient stops. Light/gold custom accents use dark text; dark accents use white text.
+- **Current State is an independent EQ snapshot:** Initialize a dedicated Current State record on first launch. Selecting a saved preset no longer overwrites the Current State snapshot as a side effect of `applyProfile`. When leaving Current State or edited working values for another preset, ask Yes/No; Yes saves the latest EQ bands and effect values to the dedicated Current State record before applying the selected preset, while No keeps the current working curve selected. Selecting a named preset does not silently replace Current State. Actual band/effect edits continue to update Current State.
+- **Save To list parity:** Render compatible user-created save targets with the same section headings, row height, typography, rounded surface, and chevron treatment as the EQ preset dropdown. Built-in presets remain excluded and protected.
+- **Stop/Start restore:** Preserve the last requested Visualizer modes across an explicit Stop. Start restores Floating only when it was previously requested and overlay permission is available; if M.Projection was ON, Android MediaProjection consent is requested again because the authorization token cannot be reused after Stop. The independent EQ service remains untouched.
+- **Position & Visibility Linked:** Add a per-layer Linked control immediately before Position. Linked layers form a group for X/Y positional delta and hide/unhide only. Position moves apply the same effective delta after screen-edge clamping while preserving each layer's own offset; dynamic drag release also propagates the final delta. Canceling the Position dialog restores the linked group snapshot. Rename and Delete remain individual and never propagate.
+- **Persistence:** Store the group identifier in each Floating Profile and preserve it through the profile library, service profile payload, and complete Floating Scene snapshots. New layers start unlinked; deleting/unlinking cleans up singleton group IDs.
+- **Audio engine:** No audio capture, FFT, Hop, stereo analysis, M.Projection processing, or spectrum calibration code is changed from the tested V3.0.18.5 baseline.
+- **Version:** `versionName 3.0.18.7`, `versionCode 102`.
+
+## V3.0.18.6 — Equalizer UX, Themed Safety Dialogs & Portable General Backup
+
+- Change Bass Boost and Virtualizer sliders to horizontal oval mixer-style caps; keep the EQ band faders unchanged.
+- Restrict Save To targets to compatible user-created presets. Built-in 5/10-band library entries are protected from overwrite, rename, and delete.
+- Add themed overwrite/delete and per-band reset confirmations. Band reset reports the current dB and target 0 dB and changes only the selected band.
+- Make preset action labels single-line and autosizing on narrower/default-density displays; replace the EQ name prompt's stock buttons with a responsive app-themed dialog.
+- Make GLASS and CUSTOM notification text/secondary colors follow the phone's system Light/Dark appearance while preserving explicit LIGHT/DARK modes.
+- Add a themed Visualizer stop confirmation. Confirmed stop terminates only FloatingVisualizerService and removes its notification; the independent EQ service and notification remain running.
+- Route notification Stop through the same confirmation screen.
+- Make General Settings import accept portable JSON scalar preferences even when a newer key is not yet present on the receiving device. Continue excluding runtime/service state and permission/session grants; improve file-size/BOM handling and error diagnostics.
+- Keep the V3.0.18.5 audio-engine implementation unchanged.
+- **Version:** `versionName 3.0.18.6`, `versionCode 101`.
+
+## V3.0.18.5 — Stereo Capture Session Stability & Direct-Level Recovery (versionCode 100)
+
+- **Keep M.Projection enabled during FFT/Hop edits:** Treat FFT/Hop as analyzer-window settings. Reconfigure the analysis worker while retaining the existing MediaProjection token and AudioRecord instead of destroying and rebuilding the capture recorder for every setting change.
+- **Prevent stale-reader races:** Give each PCM worker a generation ID. An invalidated reader cannot become active again when a new worker sets the shared running flag, and an old reader cannot trigger a false BACKUP_ERROR after an update.
+- **Preserve the selected source on settings errors:** A reader reconfiguration warning no longer automatically stops MediaProjection and silently switches the engine to Android Visualizer(0). The UI keeps the M.Projection switch enabled and surfaces a distinct reconfiguration warning.
+- **Maximum analysis buffer reservation:** Initialize the PCM recorder with enough buffer capacity for the maximum supported 4096-point FFT and 2048-frame Hop, so later analysis changes do not require a new AudioRecord.
+- **Restore V3.0.18.1 Horizontal PCM fixed calibration:** Set the fixed PCM Hann-FFT Horizontal scale back to 9.0, matching the strong V3.0.18/V3.0.18.1 reference curve. This is a constant scale only; no frame-peak, whole-spectrum, or content-dependent normalization is applied. The dedicated Single/DJ 256-band bank remains at its proven V3.0.18.3 calibration and is not modified.
+- **Keep modern stereo capture:** Preserve independent L/R FFTs and RMS magnitude combination after each channel FFT. Retain actual negotiated sample-rate mapping and Single/DJ per-profile Hz analysis.
+- **Source behavior:** M.Projection ON continues to use the user-authorized stereo PCM playback-capture route; M.Projection OFF continues to use Android Visualizer(0). Hop applies only to PCM playback capture; standard Visualizer uses its device callback cadence.
+- **Version:** `versionName 3.0.18.5`, `versionCode 100`.
+
+---
+
+## V3.0.18.4 — Horizontal Spectrum Response Recovery (versionCode 99)
+
+- **Remove PCM Horizontal frame pumping:** Stop applying one frame-peak normalization gain to the entire MediaProjection PCM spectrum. Horizontal bands now use the fixed Hann-FFT calibration directly, so a loud vocal/cymbal peak cannot reduce or reshape unrelated bass/mid bands in that frame. The independent Single/DJ bank remains un-normalized and retains its V3.0.18.3 range calibration.
+- **Improve Horizontal band aggregation:** Replace plain arithmetic averaging across the 64-band analysis bins with a restrained RMS-preserving floor (`max(mean, 0.75 × RMS)`). This helps focused vocal notes and low-frequency events remain visible when a rendered bar spans several analysis bands, without using a peak-only detector.
+- **Tame output-mix Horizontal overactivity:** Keep Android `Visualizer(0)` NORMALIZED mode so the validated Single/DJ output-mix behavior is not globally changed. Apply a Horizontal-only exponent curve to the 64-band Visualizer data; the dedicated 256-band Single/DJ bank and its full-range meter slot retain their prior calculations.
+- **Live/Floating parity:** Apply the same Horizontal aggregation math in the Live Display preview, layered Floating Scene renderer, and legacy/root Floating Overlay. Existing time-based attack/release, bar geometry, color/effect rendering, profile data, capture routing, FFT choices, and Hop settings remain unchanged.
+- **Compatibility:** No new permission, microphone path, audio source, or protected-playback bypass. M.Projection OFF remains `Visualizer(0)`; M.Projection ON remains user-authorized playback capture.
+- **Version:** `versionName 3.0.18.4`, `versionCode 99`.
+
+---
+
+## V3.0.18.3 — Single Low-Frequency Meter Recovery & Per-Profile Hz Resolution (versionCode 98)
+
+- **Independent Single/DJ analysis bank:** Add a dedicated 256-band logarithmic spectrum bank for Single/DJ meters. Each Floating Profile now samples its own Start/End Hz range from this bank rather than averaging the coarser 64-band Horizontal map. The Live Display preview uses the same bank and range calculation as the Floating Overlay.
+- **Low-frequency recovery:** Remove the full-frame peak normalization from the dedicated Single/DJ measurement path and calibrate that range independently with a bounded 30.0 scale. A loud unrelated vocal, cymbal, or mid/high transient can no longer pull down the selected low-frequency meter. Stereo channel magnitudes are still combined after each channel FFT using RMS energy.
+- **Resolution-aware narrow ranges:** Include the actual FFT bin width in each spectrum frame. When a selected range such as 55–62 Hz is narrower than one real FFT bin, expand the measurement symmetrically only to that bin width. This avoids pretending that a coarse FFT can resolve a range narrower than its physical frequency resolution.
+- **Transient response:** Apply a faster, time-based attack only to Single/DJ meters; retain the user Response setting and existing release curve. Horizontal bar smoothing and V3.0.18.2's vocal/mid calibration remain unchanged.
+- **Compatibility:** Preserve legacy 66-value spectrum fallback, existing profile/scene data, audio permissions, capture routes, FFT choices, and Hop settings. No microphone path or protected-audio capture bypass is added.
+- **Version:** `versionName 3.0.18.3`, `versionCode 98`.
+
+---
+
+## V3.0.18.2 — Cross-Source Audio Level Calibration & Capture Stability (versionCode 97)
+
+- **Source parity:** Keep the same 64-band logarithmic frequency map, full-bin band integration, peak retention, and time-based response animation for both Android `Visualizer(0)` and PCM playback capture.
+- **Normalized PCM level:** Match the normalized output-mix Visualizer behavior more closely by applying one bounded frame-peak gain across both PCM channels before the Hann FFT. Calibrate PCM Hann-bin magnitude to the Visualizer 8-bit magnitude scale; retain a gain ceiling so near-silence/noise is not amplified without limit.
+- **Stereo preservation:** Keep separate left/right FFTs and combine their magnitudes as RMS energy after each channel transform. No pre-FFT L/R waveform downmix is introduced.
+- **Exact Hop advancement:** Accumulate partial `AudioRecord.read()` results until one complete interleaved Hop block is available. The FFT window now advances by the configured Hop frame count rather than by an incidental partial read size.
+- **Actual capture diagnostics:** Read `AudioRecord.sampleRate` after initialization and use it for PCM window duration, bin resolution, Hop interval, and frequency mapping. Report the negotiated channel mode and sample rate in status/log output.
+- **Platform behavior clarified:** M.Projection OFF uses Android `Visualizer(0)` on the global output mix; it is not microphone input, and Hop Size is not applied on this platform callback route. Playback capture remains Android 10+ and is limited by the source app's usage/capture policy and user-consent requirements.
+- **Privacy and compatibility:** No microphone capture path, hidden audio source, protected-content bypass, or permission bypass is added. Android 8–9 continue using the Visualizer route; Android 10+ may use user-authorized playback capture when permitted by the source app.
+- **Version:** `versionName 3.0.18.2`, `versionCode 97`.
+
+---
+
+## V3.0.18.1 — Stereo Playback Capture & Spectrum Consistency (versionCode 96)
+
+- **Stereo MediaProjection capture:** Prefer stereo PCM and run independent left/right FFTs before combining magnitudes by RMS energy. This avoids cancellation of anti-phase vocal, chorus, and stereo material caused by a pre-FFT mono downmix. Fall back to mono only when stereo capture cannot initialize, and log/report the channel mode.
+- **Full-bin logarithmic analysis:** Measure every FFT bin inside each logarithmic Horizontal band using RMS energy plus peak retention, rather than probing only five arbitrary frequencies. This reduces missed mid/high harmonics between sample points.
+- **Fractional Single-frequency ranges:** Measure narrow Single/DJ ranges through interpolation when the selected range is narrower than the device FFT resolution, instead of snapping to a neighbouring whole bin.
+- **Visualizer capability reporting:** Use the maximum callback rate reported by `Visualizer.getMaxCaptureRate()` without an additional fixed 20 Hz cap. Log requested versus actually applied capture size, bin resolution, and callback cadence. Explicitly request normalized Visualizer scaling when supported.
+- **Source-specific behavior clarified:** Response remains time-based bar-animation smoothing. Hop Size applies only to the MediaProjection PCM path; standard Android Visualizer uses its device-reported callback cadence.
+- **Version:** `versionName 3.0.18.1`, `versionCode 96`.
+
+---
+
 ## V3.0.18 — Equalizer First-Open Rail Visibility & Right-Gutter Alignment (versionCode 95)
 - Rebuild the Equalizer Activity page scroll indicator as a viewport-sized sibling overlay, matching the main Visualizer page's right-edge glass rail rather than a narrow side-column child.
 - Remove the `host.windowVisibility` readiness gate that could evaluate during the Activity launch transition, set the indicator to `GONE`, and leave it hidden until an unrelated theme/EQ refresh. Keep the rail attached and refresh on layout, Activity resume, window focus, and scrolling.
@@ -247,3 +360,13 @@
 - Preamp, Bass Boost, Virtualizer, Limiter, and Reverb controls are separated into themed effect cards; boost controls show percentage readouts and dependent controls visibly disable while EQ is off.
 - Added Equalizer Engine toggle to the Visualizer foreground notification and renamed the audio row to Start/Stop Visualizer. Notification state reads the persisted EQ and floating settings; EQ service refreshes the host notification after lifecycle changes.
 - Export now asks whether to export Current State or a named preset. Import asks whether to apply to Current State or save as a new preset.
+
+
+## V3.0.18.1 — Stereo Playback Capture & Spectrum Consistency
+
+- **Stereo MediaProjection capture:** Prefer stereo PCM capture and run independent left/right FFTs before combining magnitudes. This avoids cancellation of anti-phase vocal, chorus, and stereo material caused by a pre-FFT mono downmix. Fall back to mono only when the device cannot initialize stereo capture, and log/report the channel mode.
+- **Full-bin logarithmic analysis:** Measure every FFT bin within each logarithmic horizontal band using RMS energy plus peak retention, instead of probing only five arbitrary frequencies. This reduces missed mid/high harmonics between sample points.
+- **Fractional Single-frequency ranges:** Measure narrow Single/DJ frequency ranges through interpolation when the selected range is narrower than the device's FFT resolution, rather than snapping to an unrelated whole bin.
+- **Visualizer device capability:** Use the maximum callback rate reported by `Visualizer.getMaxCaptureRate()` without an additional fixed 20 Hz cap. Log requested versus actually applied capture size, sampling resolution, and callback rate. Explicitly request normalized Visualizer scaling when supported.
+- **Source-specific controls clarified:** Response remains time-based bar animation smoothing. Hop Size is used only by the MediaProjection PCM path; the standard Android Visualizer path uses its device-reported callback cadence.
+- **Version:** `versionName 3.0.18.1`, `versionCode 96`.

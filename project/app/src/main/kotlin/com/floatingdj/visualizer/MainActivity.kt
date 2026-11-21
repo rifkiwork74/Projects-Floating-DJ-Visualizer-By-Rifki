@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
 import android.animation.LayoutTransition
+import android.animation.ValueAnimator
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -12,6 +13,9 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Matrix
+import android.graphics.Shader
 import android.graphics.drawable.GradientDrawable
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
@@ -34,6 +38,7 @@ import android.text.TextWatcher
 import android.text.Editable
 import android.view.Gravity
 import android.view.Choreographer
+import android.view.animation.LinearInterpolator
 import android.view.MotionEvent
 import android.view.WindowInsets
 import android.view.inputmethod.EditorInfo
@@ -103,7 +108,7 @@ class MainActivity : Activity() {
     private var themeTextColor = Color.parseColor("#F5F7FC")
     private var singleRangeResetButton: TextView? = null
     private var livePreviewProfileId = "root"
-    private var latestSpectrumLevels = FloatArray(MAX_BAR_COUNT + 2)
+    private var latestSpectrumLevels = FloatArray(SPECTRUM_FRAME_SIZE)
     private var livePreviewProfileCache: FloatingLayerProfile? = null
     private var livePreviewProfileCacheRevision = -1L
     private var singleModeHideAnimationRunning = false
@@ -116,11 +121,17 @@ class MainActivity : Activity() {
     private var floatingProfilePickerButton: TextView? = null
     private lateinit var engineStatus: TextView
     private lateinit var audioSourceStatus: TextView
+    private lateinit var visualizerTitle: TextView
+    private var visualizerTitleActive = false
+    private var visualizerTitleGradientAnimator: ValueAnimator? = null
+    private var visualizerTitleShine: BrandShineDrawable? = null
+    private var visualizerTitleGradientGeneration = 0
     private lateinit var backupSwitch: Switch
     private lateinit var floatingOverlaySwitch: Switch
     private var floatingOverlayEnabled = false
     private val scrollEdgeFadeRefs = mutableListOf<java.lang.ref.WeakReference<ScrollEdgeGlassFadeDrawable>>()
     private var pendingFloatingOverlayEnable = false
+    private var pendingRestoreProjectionAfterOverlay = false
 
     private val prefs by lazy {
         getSharedPreferences("floating_dj_settings", MODE_PRIVATE)
@@ -249,14 +260,14 @@ class MainActivity : Activity() {
 
     private fun previewFrameSmoothingFactors(responsePercent: Int, dtSeconds: Float): Pair<Float, Float> {
         val response = responsePercent.coerceIn(0, 100) / 100f
-        // Preserve the former response feel at a 20 Hz audio update interval,
-        // but evaluate it for every display frame using an exponential time curve.
-        val dt = dtSeconds.coerceIn(0.001f, 0.05f)
-        fun factor(sampleFactor: Float): Float {
-            val ratePerSecond = -kotlin.math.ln((1f - sampleFactor).coerceAtLeast(0.001f).toDouble()) / 0.05
-            return (1.0 - exp(-ratePerSecond * dt)).toFloat().coerceIn(0f, 1f)
-        }
-        return Pair(factor(0.56f + response * 0.40f), factor(0.20f + response * 0.62f))
+        // Keep Live Display in lockstep with Floating: direct time constants,
+        // independent of the source callback rate and the display refresh rate.
+        val dt = dtSeconds.coerceIn(0.001f, 0.05f).toDouble()
+        val attackTauSeconds = (24.0 - response * 18.0) / 1000.0
+        val releaseTauSeconds = (52.0 - response * 32.0) / 1000.0
+        val attack = (1.0 - exp(-dt / attackTauSeconds)).toFloat().coerceIn(0f, 1f)
+        val release = (1.0 - exp(-dt / releaseTauSeconds)).toFloat().coerceIn(0f, 1f)
+        return Pair(attack, release)
     }
     private data class SliderBinding(
         val seek: SeekBar,
@@ -306,6 +317,7 @@ class MainActivity : Activity() {
     private val sliderLinkButtons = mutableMapOf<String, SliderLinkButton>()
     /** Temporary per-layer values displayed by the service while a linked control is being previewed. */
     private val linkedLayerPreviewOverrides = mutableMapOf<String, FloatingLayerProfile>()
+    private val lastLayerPositionById = mutableMapOf<String, Pair<Int, Int>>()
     /** True only while the numeric dialog is showing an uncommitted live preview. */
     private var controlValueDialogPreviewActive = false
 
@@ -342,6 +354,7 @@ class MainActivity : Activity() {
         private const val REQUEST_AUDIO = 2001
         private const val REQUEST_BACKUP_PROJECTION = 2002
         const val EXTRA_NOTIFICATION_TOGGLE_BACKUP = "extra_notification_toggle_backup"
+        const val EXTRA_CONFIRM_STOP_VISUALIZER = "extra_confirm_stop_visualizer"
 
         private const val THEME_GLASS = "GLASS"
         private const val THEME_CUSTOM = "CUSTOM"
@@ -354,6 +367,10 @@ class MainActivity : Activity() {
         private const val EFFECT_NEON = "NEON"
         private const val EFFECT_GLASS = "GLASS"
         private const val MAX_BAR_COUNT = 64
+        private const val SINGLE_SPECTRUM_BAND_COUNT = 256
+        private const val SINGLE_SPECTRUM_OFFSET = MAX_BAR_COUNT + 2
+        private const val SINGLE_BIN_HZ_INDEX = SINGLE_SPECTRUM_OFFSET + SINGLE_SPECTRUM_BAND_COUNT
+        private const val SPECTRUM_FRAME_SIZE = SINGLE_BIN_HZ_INDEX + 1
         private const val MIN_SPECTRUM_HZ = 20.0
         private const val MAX_SPECTRUM_HZ = 20000.0
         private const val PREVIEW_FLOATING_SCALE = 0.30f
@@ -395,10 +412,30 @@ class MainActivity : Activity() {
                             activePositionCoordinateView?.text = formatLayerCoordinateStatus(newX, newY, activePositionDialogUnit)
                             activePositionDraftUpdater?.invoke(newX, newY)
                         }
-                        // Do not rebuild the whole profile list during a drag. The service
-                        // broadcasts transient coordinates at a capped rate and persists
-                        // them once on release; only the final event refreshes the rows.
+                        // Dynamic overlay drags are persisted by the Service. On release,
+                        // propagate the final relative delta to linked siblings once (not
+                        // on every transient touch broadcast), preserving each own offset.
                         if (isFinalPosition) {
+                            val previous = lastLayerPositionById[layerId]
+                            val profiles = readFloatingProfileLibrary()
+                            val moved = profiles.firstOrNull { it.id == layerId }
+                            if (previous != null && moved != null && !moved.positionVisibilityLinkId.isNullOrBlank()) {
+                                val deltaX = newX - previous.first
+                                val deltaY = newY - previous.second
+                                if (deltaX != 0 || deltaY != 0) {
+                                    val linked = profiles.map { profile ->
+                                        if (profile.id != layerId && profile.positionVisibilityLinkId == moved.positionVisibilityLinkId) {
+                                            clampFloatingLayerPosition(profile.copy(
+                                                positionXdp = (profile.positionXdp + deltaX).coerceIn(0, 100000),
+                                                positionYdp = (profile.positionYdp + deltaY).coerceIn(0, 100000)
+                                            ))
+                                        } else profile
+                                    }
+                                    writeFloatingProfileLibrary(linked)
+                                    updateFloatingService()
+                                }
+                            }
+                            lastLayerPositionById[layerId] = newX to newY
                             buildFloatingProfileList()
                             refreshFloatingProfileSectionPickers()
                         }
@@ -464,12 +501,22 @@ class MainActivity : Activity() {
         modeComingSoon = findViewById(R.id.btnModeComingSoon)
         engineStatus = findViewById(R.id.txtEngineStatus)
         audioSourceStatus = findViewById(R.id.txtAudioSource)
+        visualizerTitle = findViewById(R.id.txtVisualizerTitle)
+        visualizerTitleShine = BrandShineDrawable(this).also { shine ->
+            visualizerTitle.overlay.add(shine)
+            shine.setBounds(0, 0, visualizerTitle.width, visualizerTitle.height)
+        }
+        visualizerTitle.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            visualizerTitleShine?.setBounds(0, 0, visualizerTitle.width, visualizerTitle.height)
+            refreshVisualizerTitleGradient(visualizerTitleActive)
+        }
         backupSwitch = findViewById(R.id.switchBackupCapture)
         floatingOverlaySwitch = findViewById(R.id.switchFloatingOverlay)
         installEdgeToEdgeInsets()
 
         loadSettings()
         ensureFloatingProfileLibrary()
+        syncLayerPositionCache(readFloatingProfileLibrary())
         livePreviewProfileId = prefs.getString("live_preview_profile_id", selectedFloatingProfileId) ?: selectedFloatingProfileId
         if (readFloatingProfileLibrary().none { it.id == livePreviewProfileId }) livePreviewProfileId = selectedFloatingProfileId
         if (!floatingServiceStarted) backupCaptureEnabled = false
@@ -527,6 +574,7 @@ class MainActivity : Activity() {
             barsContainer.postDelayed({ updateFloatingService() }, 300L)
         }
         handleNotificationBackupToggle(intent)
+        handleNotificationStopRequest(intent)
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -534,6 +582,14 @@ class MainActivity : Activity() {
         if (intent != null) {
             setIntent(intent)
             handleNotificationBackupToggle(intent)
+            handleNotificationStopRequest(intent)
+        }
+    }
+
+    private fun handleNotificationStopRequest(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_CONFIRM_STOP_VISUALIZER, false) == true) {
+            intent.removeExtra(EXTRA_CONFIRM_STOP_VISUALIZER)
+            mainRoot.post { requestStopVisualizerConfirmation() }
         }
     }
 
@@ -617,8 +673,16 @@ class MainActivity : Activity() {
         super.onStop()
     }
 
+    override fun onPause() {
+        visualizerTitleGradientAnimator?.cancel()
+        visualizerTitleGradientAnimator = null
+        refreshVisualizerTitleGradient(animate = false)
+        super.onPause()
+    }
+
     override fun onResume() {
         super.onResume()
+        refreshVisualizerTitleGradient(visualizerTitleActive)
         // The EQ Activity owns its own window. Refresh this entry card whenever it returns
         // so the traffic-light state follows the persisted EQ engine switch.
         updateEqEngineCardStatus()
@@ -669,6 +733,14 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        visualizerTitleGradientGeneration++
+        visualizerTitleGradientAnimator?.cancel()
+        visualizerTitleGradientAnimator = null
+        if (::visualizerTitle.isInitialized) {
+            visualizerTitle.paint.shader = null
+            visualizerTitleShine?.let { visualizerTitle.overlay.remove(it) }
+        }
+        visualizerTitleShine = null
         activityStartedForPreview = false
         cancelPreviewAnimationFrame()
         updateHandler.removeCallbacks(realtimeUpdate)
@@ -2271,17 +2343,25 @@ class MainActivity : Activity() {
         if (levels.isEmpty()) return 0f
         val (start, end) = horizontalBandWindow(index, count, profile)
         var weighted = 0f
+        var weightedPower = 0f
         var totalWeight = 0f
         val firstBand = floor(start.toDouble()).toInt().coerceIn(0, MAX_BAR_COUNT - 1)
         val lastBand = floor((end - 0.0001f).coerceAtLeast(start).toDouble()).toInt().coerceIn(firstBand, MAX_BAR_COUNT - 1)
         for (band in firstBand..lastBand) {
             val overlap = (minOf(end, band + 1f) - maxOf(start, band.toFloat())).coerceAtLeast(0f)
             if (overlap > 0f) {
-                weighted += levels.getOrElse(band) { 0f }.coerceIn(0f, 1f) * overlap
+                val value = levels.getOrElse(band) { 0f }.coerceIn(0f, 1f)
+                weighted += value * overlap
+                weightedPower += value * value * overlap
                 totalWeight += overlap
             }
         }
-        return (weighted / totalWeight.coerceAtLeast(0.001f)).coerceIn(0f, 1f)
+        if (totalWeight <= 0.001f) return 0f
+        val mean = weighted / totalWeight
+        val rms = kotlin.math.sqrt(weightedPower / totalWeight)
+        // Match Floating Overlay: protect concentrated notes inside each bar
+        // without turning the spectrum into a peak-only detector.
+        return maxOf(mean, rms * 0.75f).coerceIn(0f, 1f)
     }
 
     private fun previewBandFrequencyDescription(index: Int, count: Int, profile: FloatingLayerProfile = livePreviewProfile()): String {
@@ -2296,13 +2376,57 @@ class MainActivity : Activity() {
     }
 
     private fun sampleSinglePreviewRange(levels: FloatArray, profile: FloatingLayerProfile): Float {
-        val low = minOf(profile.bassMinHz, profile.bassMaxHz)
-        val high = maxOf(profile.bassMinHz, profile.bassMaxHz)
-        val fullRange = low == 0 && high == 0
-        val startHz = if (fullRange) MIN_SPECTRUM_HZ else low.coerceAtLeast(MIN_SPECTRUM_HZ.toInt()).toDouble()
-        val endHz = if (fullRange) 20000.0 else maxOf(high, low).toDouble().coerceAtLeast(startHz)
-        val start = (ln(startHz / MIN_SPECTRUM_HZ) / ln(MAX_SPECTRUM_HZ / MIN_SPECTRUM_HZ) * MAX_BAR_COUNT).toFloat().coerceIn(0f, MAX_BAR_COUNT - 0.001f)
-        val end = (ln(endHz / MIN_SPECTRUM_HZ) / ln(MAX_SPECTRUM_HZ / MIN_SPECTRUM_HZ) * MAX_BAR_COUNT).toFloat().coerceIn(start + 0.001f, MAX_BAR_COUNT.toFloat())
+        val low = minOf(profile.bassMinHz, profile.bassMaxHz).toDouble()
+        val high = maxOf(profile.bassMinHz, profile.bassMaxHz).toDouble()
+        val fullRange = low == 0.0 && high == 0.0
+        if (fullRange) return levels.getOrElse(MAX_BAR_COUNT + 1) { 0f }.coerceIn(0f, 1f)
+
+        // Keep the in-app Live Display preview on the same fine Single/DJ
+        // frequency bank and device-resolution widening used by the overlay.
+        if (levels.size >= SPECTRUM_FRAME_SIZE) {
+            val binHz = levels.getOrElse(SINGLE_BIN_HZ_INDEX) { 0f }.toDouble()
+                .takeIf { it.isFinite() && it > 0.0 } ?: 0.0
+            var startHz = low.coerceAtLeast(MIN_SPECTRUM_HZ)
+            var endHz = high.coerceAtLeast(startHz)
+            val requestedWidth = (endHz - startHz).coerceAtLeast(0.001)
+            if (binHz > requestedWidth && binHz.isFinite()) {
+                val center = (startHz + endHz) * 0.5
+                startHz = (center - binHz * 0.5).coerceAtLeast(MIN_SPECTRUM_HZ)
+                endHz = (center + binHz * 0.5).coerceAtMost(MAX_SPECTRUM_HZ)
+            }
+            val ratio = MAX_SPECTRUM_HZ / MIN_SPECTRUM_HZ
+            val start = (ln(startHz / MIN_SPECTRUM_HZ) / ln(ratio) * SINGLE_SPECTRUM_BAND_COUNT)
+                .coerceIn(0.0, SINGLE_SPECTRUM_BAND_COUNT - 0.001)
+            val end = (ln(endHz / MIN_SPECTRUM_HZ) / ln(ratio) * SINGLE_SPECTRUM_BAND_COUNT)
+                .coerceIn(start + 0.001, SINGLE_SPECTRUM_BAND_COUNT.toDouble())
+            val first = floor(start).toInt().coerceIn(0, SINGLE_SPECTRUM_BAND_COUNT - 1)
+            val last = floor((end - 0.0001).coerceAtLeast(start)).toInt()
+                .coerceIn(first, SINGLE_SPECTRUM_BAND_COUNT - 1)
+            var power = 0.0
+            var weight = 0.0
+            var peak = 0.0
+            for (band in first..last) {
+                val overlap = (minOf(end, band + 1.0) - maxOf(start, band.toDouble())).coerceAtLeast(0.0)
+                if (overlap <= 0.0) continue
+                val level = levels.getOrElse(SINGLE_SPECTRUM_OFFSET + band) { 0f }
+                    .toDouble().coerceIn(0.0, 1.0)
+                power += level * level * overlap
+                weight += overlap
+                peak = maxOf(peak, level)
+            }
+            if (weight > 0.0) {
+                val rms = kotlin.math.sqrt(power / weight).toFloat().coerceIn(0f, 1f)
+                return maxOf(rms, (peak * 0.94).toFloat()).coerceIn(0f, 1f)
+            }
+        }
+
+        // Backward-compatible fallback for legacy 66-value spectrum frames.
+        val startHz = low.coerceAtLeast(MIN_SPECTRUM_HZ)
+        val endHz = high.coerceAtLeast(startHz)
+        val start = (ln(startHz / MIN_SPECTRUM_HZ) / ln(MAX_SPECTRUM_HZ / MIN_SPECTRUM_HZ) * MAX_BAR_COUNT)
+            .toFloat().coerceIn(0f, MAX_BAR_COUNT - 0.001f)
+        val end = (ln(endHz / MIN_SPECTRUM_HZ) / ln(MAX_SPECTRUM_HZ / MIN_SPECTRUM_HZ) * MAX_BAR_COUNT)
+            .toFloat().coerceIn(start + 0.001f, MAX_BAR_COUNT.toFloat())
         val first = floor(start.toDouble()).toInt().coerceIn(0, MAX_BAR_COUNT - 1)
         val last = floor((end - 0.0001f).coerceAtLeast(start).toDouble()).toInt().coerceIn(first, MAX_BAR_COUNT - 1)
         var sum = 0f
@@ -2900,8 +3024,8 @@ class MainActivity : Activity() {
 
         addControlSectionDivider(controlsContainer, if (appLanguage == "id") "RESPONSE ENGINE" else "RESPONSE ENGINE")
         addControlInfoText(controlsContainer, if (appLanguage == "id")
-            "Response mengatur kehalusan gerak bar. FFT Size mengatur resolusi frekuensi dan panjang jendela analisis. Hop Size mengatur jarak pembaruan FFT pada MediaProjection; Visualizer Android memakai cadence callback dari sistem." else
-            "Response controls bar animation smoothing. FFT Size sets frequency resolution and analysis-window length. Hop Size sets PCM FFT update spacing for MediaProjection; Android Visualizer uses the system callback cadence.")
+            "Response mengatur smoothing animasi bar. FFT Size mengatur resolusi frekuensi dan panjang jendela. M.Projection menangkap PCM stereo bila didukung, lalu FFT dihitung per kanal dan magnitudo digabungkan agar vokal stereo tidak hilang karena downmix mono. Tanpa M.Projection, Android Visualizer memakai ukuran capture dan laju callback maksimum yang dilaporkan perangkat; Hop tidak digunakan pada jalur ini." else
+            "Response controls bar-animation smoothing. FFT Size sets frequency resolution and window length. MediaProjection captures stereo PCM where supported, runs FFT per channel, then combines magnitudes so stereo vocals are not lost by a pre-FFT mono downmix. Without MediaProjection, Android Visualizer uses the capture size and maximum callback rate reported by the device; Hop is not used on this path.")
         addControlSlider(
             controlsContainer, "RESPONSE SPEED", responsePercent, 0, 100, "%",
             onValue = { clearSelectedAppearancePreset(); responsePercent = it },
@@ -2910,6 +3034,9 @@ class MainActivity : Activity() {
         addControlInfoText(controlsContainer, if (appLanguage == "id")
             "0% = gerakan lebih lembut dan tertahan · 100% = respons lebih cepat/agresif. Ini mengatur smoothing animasi bar, bukan jumlah callback audio per detik." else
             "0% = softer, slower movement · 100% = faster, more aggressive response. This controls bar-animation smoothing, not audio callback frequency.")
+        addControlInfoText(controlsContainer, if (appLanguage == "id")
+            "M.Projection menganalisis PCM playback, bukan membaca metadata BPM. Audio hanya dapat ditangkap dari aplikasi dengan usage UNKNOWN/MEDIA/GAME yang mengizinkan playback capture. Jika sumber aplikasi membatasi capture, gunakan Visualizer Android sebagai jalur alternatif." else
+            "MediaProjection analyses playback PCM; it does not read BPM metadata. Audio can only be captured from apps using UNKNOWN/MEDIA/GAME usage that permit playback capture. If the source app restricts capture, use Android Visualizer as the alternative path.")
         addControlSectionDivider(controlsContainer, if (appLanguage == "id") "GLOBAL AUDIO ANALYSIS" else "GLOBAL AUDIO ANALYSIS")
         addControlScopePill(
             controlsContainer,
@@ -2947,8 +3074,8 @@ class MainActivity : Activity() {
             deferServiceUpdate = true
         )
         addControlInfoText(controlsContainer, if (appLanguage == "id")
-            "Pada 44,1 kHz: 256 ≈ 5,8 ms · 512 ≈ 11,6 ms · 1024 ≈ 23,2 ms · 2048 ≈ 46,4 ms antar-jendela. Opsi yang lebih besar dari FFT Size aktif otomatis tidak tersedia. Hop lebih kecil meningkatkan overlap dan laju pembaruan, tetapi menambah beban CPU. Hanya berlaku untuk PCM MediaProjection; Visualizer standar memakai cadence callback sistem." else
-            "At 44.1 kHz: 256 ≈ 5.8 ms · 512 ≈ 11.6 ms · 1024 ≈ 23.2 ms · 2048 ≈ 46.4 ms between windows. Values larger than the active FFT Size are unavailable. Smaller hop increases overlap and update rate but costs more CPU. Applies only to MediaProjection PCM; standard Visualizer uses the system callback cadence.")
+            "Pada sample rate 44,1 kHz: Hop 256 ≈ 5,8 ms dan Hop 512 ≈ 11,6 ms antar-update. Dengan FFT 4096, jendela analisis ≈ 92,9 ms; overlap-nya 93,75% untuk Hop 256 dan 87,5% untuk Hop 512. Hop kecil memperbarui analisis lebih sering, tetapi tidak memendekkan jendela FFT 92,9 ms dan menambah beban CPU. Hanya berlaku untuk PCM M.Projection; Android Visualizer tidak memiliki kontrol Hop." else
+            "At 44.1 kHz: Hop 256 ≈ 5.8 ms and Hop 512 ≈ 11.6 ms between updates. With FFT 4096, the analysis window is ≈ 92.9 ms; overlap is 93.75% at Hop 256 and 87.5% at Hop 512. A smaller hop updates analysis more frequently but does not shorten the 92.9 ms FFT window and uses more CPU. This applies only to MediaProjection PCM; Android Visualizer has no Hop control.")
         updateBarAppearanceModeAvailability()
         refreshSliderLinkButtons()
     }
@@ -4647,7 +4774,8 @@ class MainActivity : Activity() {
         val visible: Boolean = true,
         val effectGlowValues: Map<String, Int> = emptyMap(),
         val appearancePresetName: String? = null,
-        val sliderLinks: Map<String, SliderLinkConfig> = emptyMap()
+        val sliderLinks: Map<String, SliderLinkConfig> = emptyMap(),
+        val positionVisibilityLinkId: String? = null
     )
 
     private fun currentFloatingLayerSnapshot(
@@ -4687,7 +4815,8 @@ class MainActivity : Activity() {
             visible = old?.visible ?: true,
             effectGlowValues = old?.effectGlowValues ?: emptyMap(),
             appearancePresetName = old?.appearancePresetName,
-            sliderLinks = old?.sliderLinks ?: emptyMap()
+            sliderLinks = old?.sliderLinks ?: emptyMap(),
+            positionVisibilityLinkId = old?.positionVisibilityLinkId
         )
     }
 
@@ -4756,7 +4885,9 @@ class MainActivity : Activity() {
                                 targetIds = targetIds
                             )
                         }.toMap()
-                    } ?: emptyMap()
+                    } ?: emptyMap(),
+                    positionVisibilityLinkId = item.optString("position_visibility_link_id", "")
+                        .trim().takeIf { it.isNotEmpty() && it.length <= 80 }
                 ))
             }
             val byId = result.associateBy { it.id }
@@ -4773,6 +4904,13 @@ class MainActivity : Activity() {
                 profile.copy(sliderLinks = sanitizedLinks)
             }.toMutableList()
         } catch (_: Exception) { mutableListOf() }
+    }
+
+    private fun syncLayerPositionCache(profiles: List<FloatingLayerProfile>) {
+        lastLayerPositionById.clear()
+        profiles.forEach { profile ->
+            lastLayerPositionById[profile.id] = profile.positionXdp to profile.positionYdp
+        }
     }
 
     private fun writeFloatingProfileLibrary(profiles: List<FloatingLayerProfile>) {
@@ -4817,6 +4955,9 @@ class MainActivity : Activity() {
             item.put("position_mode", profile.positionMode)
             item.put("rotation_degrees", profile.rotationDegrees)
             item.put("visible", profile.visible)
+            if (!profile.positionVisibilityLinkId.isNullOrBlank()) {
+                item.put("position_visibility_link_id", profile.positionVisibilityLinkId)
+            }
             item.put("effect_glow_values", JSONObject().apply {
                 profile.effectGlowValues.forEach { (effect, value) -> put(effect, value.coerceIn(0, 100)) }
             })
@@ -4830,11 +4971,14 @@ class MainActivity : Activity() {
                     }
                 }
             })
+            if (profile.positionVisibilityLinkId.isNullOrBlank()) item.remove("position_visibility_link_id")
+            else item.put("position_visibility_link_id", profile.positionVisibilityLinkId)
             if (profile.appearancePresetName.isNullOrBlank()) item.remove("appearance_preset")
             else item.put("appearance_preset", profile.appearancePresetName)
             array.put(item)
         }
         prefs.edit().putString("floating_profiles", array.toString()).apply()
+        syncLayerPositionCache(normalizedProfiles)
         invalidateLivePreviewProfileCache()
         refreshFloatingSceneManagerStatus()
     }
@@ -5636,6 +5780,9 @@ class MainActivity : Activity() {
             item.put("position_mode", profile.positionMode)
             item.put("rotation_degrees", profile.rotationDegrees)
             item.put("visible", profile.visible)
+            if (!profile.positionVisibilityLinkId.isNullOrBlank()) {
+                item.put("position_visibility_link_id", profile.positionVisibilityLinkId)
+            }
             item.put("effect_glow_values", JSONObject().apply {
                 profile.effectGlowValues.forEach { (effectName, value) -> put(effectName, value.coerceIn(0, 100)) }
             })
@@ -5993,23 +6140,42 @@ class MainActivity : Activity() {
                     val targetIndex = updated.indexOfFirst { it.id == profile.id }
                     if (targetIndex >= 0) {
                         val current = updated[targetIndex]
-                        updated[targetIndex] = current.copy(visible = !current.visible)
+                        val nextVisible = !current.visible
+                        val groupId = current.positionVisibilityLinkId
+                        val affected = updated.indices.filter { index ->
+                            updated[index].id == current.id || (!groupId.isNullOrBlank() && updated[index].positionVisibilityLinkId == groupId)
+                        }
+                        affected.forEach { index -> updated[index] = updated[index].copy(visible = nextVisible) }
                         writeFloatingProfileLibrary(updated)
                         buildFloatingProfileList()
                         refreshFloatingProfileSectionPickers()
                         updateFloatingService()
+                        val countLabel = if (affected.size > 1) " · ${affected.size} layers" else ""
                         ThemedToast.makeText(
                             this@MainActivity,
-                            if (!current.visible) {
+                            (if (nextVisible) {
                                 if (appLanguage == "id") "${current.name} ditampilkan" else "${current.name} is visible"
                             } else {
                                 if (appLanguage == "id") "${current.name} disembunyikan" else "${current.name} is hidden"
-                            },
+                            }) + countLabel,
                             Toast.LENGTH_SHORT
                         ).show()
                     }
                 }
             }
+            val masterProfile = profiles.firstOrNull { it.id == selectedFloatingProfileId }
+            val isPositionVisibilityLinked = !profile.positionVisibilityLinkId.isNullOrBlank() &&
+                profile.positionVisibilityLinkId == masterProfile?.positionVisibilityLinkId
+            val linkButton = miniAction(if (isPositionVisibilityLinked) "⛓" else "↔") {
+                toggleFloatingLayerPositionVisibilityLink(profile.id)
+            }.apply {
+                contentDescription = if (isPositionVisibilityLinked) {
+                    if (appLanguage == "id") "Lepas link posisi dan visibilitas ${profile.name}" else "Unlink position and visibility for ${profile.name}"
+                } else {
+                    if (appLanguage == "id") "Tautkan posisi dan visibilitas ${profile.name} ke layer terpilih" else "Link ${profile.name} position and visibility to selected layer"
+                }
+            }
+            row.addView(linkButton)
             row.addView(miniAction("⌖") { showFloatingLayerPositionDialog(profile.id) })
             row.addView(miniVisibilityAction())
             row.addView(miniAction("✎", !profile.isDefault) {
@@ -6033,7 +6199,18 @@ class MainActivity : Activity() {
                     0.90f,
                     0.48f
                 ) {
+                    val deletedGroupId = profile.positionVisibilityLinkId
                     val list = readFloatingProfileLibrary().filterNot { it.id == profile.id }.toMutableList()
+                    if (!deletedGroupId.isNullOrBlank()) {
+                        val remaining = list.count { it.positionVisibilityLinkId == deletedGroupId }
+                        if (remaining <= 1) {
+                            list.indices.forEach { index ->
+                                if (list[index].positionVisibilityLinkId == deletedGroupId) {
+                                    list[index] = list[index].copy(positionVisibilityLinkId = null)
+                                }
+                            }
+                        }
+                    }
                     if (selectedFloatingProfileId == profile.id) selectedFloatingProfileId = "root"
                     writeFloatingProfileLibrary(list)
                     if (selectedFloatingProfileId == "root") applyFloatingProfileToControls(list.first()) else buildFloatingProfileList()
@@ -6052,6 +6229,82 @@ class MainActivity : Activity() {
         }
     }
 
+    /** Link/unlink another layer to the currently selected master for position and visibility only. */
+    private fun toggleFloatingLayerPositionVisibilityLink(targetId: String) {
+        val list = readFloatingProfileLibrary()
+        val masterIndex = list.indexOfFirst { it.id == selectedFloatingProfileId }
+        val targetIndex = list.indexOfFirst { it.id == targetId }
+        if (masterIndex < 0 || targetIndex < 0) return
+        val master = list[masterIndex]
+        val target = list[targetIndex]
+        if (targetId == master.id) {
+            val groupId = master.positionVisibilityLinkId
+            if (groupId.isNullOrBlank()) {
+                ThemedToast.makeText(this, if (appLanguage == "id") "Pilih layer utama, lalu tekan LINK pada layer lain untuk menautkannya." else "Select a master layer, then tap LINK on another layer to connect it.", Toast.LENGTH_LONG).show()
+                return
+            }
+            showGlassConfirmDialog(
+                if (appLanguage == "id") "LEPAS SEMUA LINK?" else "UNLINK ALL LAYERS?",
+                if (appLanguage == "id") "Semua layer dalam grup ini akan dilepas. Posisi dan visibilitas masing-masing tidak berubah." else "Every layer in this group will be unlinked. Their individual positions and visibility will remain unchanged.",
+                if (appLanguage == "id") "BATAL" else "CANCEL",
+                if (appLanguage == "id") "LEPAS LINK" else "UNLINK",
+                0.90f, 0.48f
+            ) {
+                val updated = readFloatingProfileLibrary().map { profile ->
+                    if (profile.positionVisibilityLinkId == groupId) profile.copy(positionVisibilityLinkId = null) else profile
+                }
+                writeFloatingProfileLibrary(updated)
+                buildFloatingProfileList()
+                updateFloatingService()
+                ThemedToast.makeText(this, if (appLanguage == "id") "Grup Linked dilepas" else "Linked group removed", Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
+
+        val masterGroup = master.positionVisibilityLinkId
+        val targetGroup = target.positionVisibilityLinkId
+        val groupId = when {
+            !masterGroup.isNullOrBlank() -> masterGroup
+            !targetGroup.isNullOrBlank() -> targetGroup
+            else -> "layer_link_${java.util.UUID.randomUUID().toString().take(12)}"
+        }
+        val alreadyLinked = !masterGroup.isNullOrBlank() && masterGroup == targetGroup
+        if (alreadyLinked) {
+            list[targetIndex] = target.copy(positionVisibilityLinkId = null)
+            val remaining = list.filter { it.positionVisibilityLinkId == groupId }
+            if (remaining.size <= 1) {
+                list.indices.forEach { index ->
+                    if (list[index].positionVisibilityLinkId == groupId) {
+                        list[index] = list[index].copy(positionVisibilityLinkId = null)
+                    }
+                }
+            }
+            writeFloatingProfileLibrary(list)
+            ThemedToast.makeText(this, if (appLanguage == "id") "${target.name} dilepas dari Linked" else "${target.name} unlinked", Toast.LENGTH_SHORT).show()
+        } else {
+            list[masterIndex] = master.copy(positionVisibilityLinkId = groupId)
+            list[targetIndex] = target.copy(positionVisibilityLinkId = groupId)
+            if (!targetGroup.isNullOrBlank() && targetGroup != groupId) {
+                val previousGroupMembers = list.filter { it.positionVisibilityLinkId == targetGroup }
+                if (previousGroupMembers.size <= 1) {
+                    list.indices.forEach { index ->
+                        if (list[index].positionVisibilityLinkId == targetGroup) {
+                            list[index] = list[index].copy(positionVisibilityLinkId = null)
+                        }
+                    }
+                }
+            }
+            writeFloatingProfileLibrary(list)
+            ThemedToast.makeText(
+                this,
+                if (appLanguage == "id") "${target.name} ditautkan ke ${master.name}. Posisi dan visibilitas akan mengikuti; Rename dan Delete tetap individual." else "${target.name} linked to ${master.name}. Position and visibility follow; Rename and Delete remain individual.",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+        buildFloatingProfileList()
+        updateFloatingService()
+    }
+
     private fun addFloatingProfile() {
         val profiles = readFloatingProfileLibrary()
         if (profiles.size >= 12) {
@@ -6066,7 +6319,10 @@ class MainActivity : Activity() {
             suffix++
             suggestedName = "Profile $suffix"
         }
-        val newProfile = base.copy(id = id, name = suggestedName, isDefault = false, visible = true)
+        val newProfile = base.copy(
+            id = id, name = suggestedName, isDefault = false, visible = true,
+            positionVisibilityLinkId = null
+        )
         profiles.add(newProfile)
         writeFloatingProfileLibrary(profiles)
         selectFloatingProfile(id)
@@ -6074,7 +6330,12 @@ class MainActivity : Activity() {
     }
 
     private fun showFloatingLayerPositionDialog(profileId: String) {
-        val original = readFloatingProfileLibrary().firstOrNull { it.id == profileId } ?: return
+        val originalLibrarySnapshot = readFloatingProfileLibrary()
+        val original = originalLibrarySnapshot.firstOrNull { it.id == profileId } ?: return
+        val linkedGroupId = original.positionVisibilityLinkId
+        val originalLinkedProfiles = originalLibrarySnapshot.filter { profile ->
+            profile.id == profileId || (!linkedGroupId.isNullOrBlank() && profile.positionVisibilityLinkId == linkedGroupId)
+        }.associateBy { it.id }
         var draft = original
         var unit = positionUnit
         var stepDp = positionStepDp.coerceIn(1f, 1000f)
@@ -6152,13 +6413,30 @@ class MainActivity : Activity() {
             refreshCoordinateText()
         }
         fun applyDraft(updateInputs: Boolean = false) {
-            // Clamp X/Y using the same pixel geometry as the overlay Service. Typing
-            // an arbitrarily large value or pressing an arrow now lands exactly on
-            // the physical edge instead of leaving a stale off-screen coordinate.
+            // Clamp X/Y using the same pixel geometry as the overlay Service. When
+            // linked, apply the same relative delta to every member so their separate
+            // corner/position layouts are preserved rather than forced to one point.
             draft = clampFloatingLayerPosition(draft)
             val list = readFloatingProfileLibrary()
             val index = list.indexOfFirst { it.id == profileId }
-            if (index >= 0) list[index] = draft
+            if (index >= 0) {
+                val currentMaster = list[index]
+                val masterDeltaX = draft.positionXdp - currentMaster.positionXdp
+                val masterDeltaY = draft.positionYdp - currentMaster.positionYdp
+                list[index] = draft.copy(positionVisibilityLinkId = currentMaster.positionVisibilityLinkId)
+                val groupId = currentMaster.positionVisibilityLinkId
+                if (!groupId.isNullOrBlank() && (masterDeltaX != 0 || masterDeltaY != 0)) {
+                    list.indices.forEach { linkedIndex ->
+                        val linked = list[linkedIndex]
+                        if (linkedIndex != index && linked.positionVisibilityLinkId == groupId) {
+                            list[linkedIndex] = clampFloatingLayerPosition(linked.copy(
+                                positionXdp = (linked.positionXdp + masterDeltaX).coerceIn(0, 100000),
+                                positionYdp = (linked.positionYdp + masterDeltaY).coerceIn(0, 100000)
+                            ))
+                        }
+                    }
+                }
+            }
             writeFloatingProfileLibrary(list)
             if (profileId == selectedFloatingProfileId) {
                 positionXdp = draft.positionXdp
@@ -6355,8 +6633,10 @@ class MainActivity : Activity() {
             if (rollbackDone || committed) return
             rollbackDone = true
             val list = readFloatingProfileLibrary()
-            val index = list.indexOfFirst { it.id == profileId }
-            if (index >= 0) list[index] = original
+            originalLinkedProfiles.forEach { (originalId, originalProfile) ->
+                val index = list.indexOfFirst { it.id == originalId }
+                if (index >= 0) list[index] = originalProfile
+            }
             writeFloatingProfileLibrary(list)
             if (profileId == selectedFloatingProfileId) {
                 positionXdp = original.positionXdp; positionYdp = original.positionYdp
@@ -7887,6 +8167,7 @@ class MainActivity : Activity() {
     /** Central UI copy map for the first English/Indonesian release pair. */
     private fun translateUiText(value: String): String {
         val translations = mapOf(
+            "ENGINE AUDIO CAPTURE · M.PROJ" to "MESIN AUDIO CAPTURE · M.PROJ",
             "BACKUP AUDIO CAPTURE" to "CADANGAN AUDIO",
             "Optional · MediaProjection, only when needed" to "Opsional · MediaProjection kalau dibutuhkan",
             "FLOATING BAR OVERLAY" to "FLOATING BAR DI ATAS APLIKASI",
@@ -9862,11 +10143,15 @@ class MainActivity : Activity() {
 
     private fun applyConfigBackup(uri: Uri) {
         try {
-            val raw = readDocumentTextLimited(uri, 1_500_000)
+            val raw = readDocumentTextLimited(uri, 4_000_000).removePrefix("\uFEFF").trim()
+            require(raw.isNotEmpty()) { "The selected backup file is empty" }
             val root = JSONObject(raw)
             require(root.optString("app") == "FloatingDJVisualizer") { "This file is not a Floating DJ backup" }
             require(root.optInt("schema", -1) in 1..CONFIG_SCHEMA_VERSION) { "Unsupported backup version" }
-            val values = root.optJSONObject("settings") ?: throw IllegalArgumentException("Backup settings are missing")
+            val values = root.optJSONObject("settings")
+                ?: root.optJSONObject("preferences")
+                ?: root.optJSONObject("prefs")
+                ?: throw IllegalArgumentException("Backup settings are missing (expected settings/preferences object)")
             val imported = JSONObject()
             val keys = values.keys()
             val stringKeys = setOf(
@@ -9880,28 +10165,60 @@ class MainActivity : Activity() {
                 "width", "height", "bar_count", "bar_width", "bar_gap", "scale", "opacity", "shadow_opacity", "glow",
                 "response_speed", "fft_size", "hop_size", "corner_radius", "bass_min_hz", "bass_max_hz", "position_x", "position_y",
                 "rotation_degrees", "theme_accent", "theme_surface_color", "theme_edge_color", "theme_text_color",
-                "theme_text_color_glass", "theme_text_color_custom", "theme_text_color_system", "theme_text_color_system_light", "theme_text_color_system_dark", "theme_text_color_light",
+                "theme_text_color_glass", "theme_text_color_custom", "theme_text_color_system", "theme_text_color_system_light", "theme_text_color_system_dark", "theme_text_color_light", "theme_text_color_dark",
                 "ui_scale_percent"
             )
             val booleanKeys = setOf("vertical", "horizontal_mirror", "position_initialized", "profile_dirty")
             val floatKeys = setOf("position_step")
+            val longKeys = emptySet<String>()
+            // Include preferences already known by this app build, so newly added
+            // scalar settings remain portable without a brittle manual allowlist.
+            val existingPreferenceTypes = prefs.all
+            val inferredStringKeys = existingPreferenceTypes.filterValues { it is String }.keys
+            val inferredIntKeys = existingPreferenceTypes.filterValues { it is Int }.keys
+            val inferredLongKeys = existingPreferenceTypes.filterValues { it is Long }.keys
+            val inferredBooleanKeys = existingPreferenceTypes.filterValues { it is Boolean }.keys
+            val inferredFloatKeys = existingPreferenceTypes.filterValues { it is Float || it is Double }.keys
+            val runtimeOnlyKeys = setOf(
+                "floating_overlay_enabled", "backup_capture", "service_active", "service_paused",
+                "media_projection_granted", "media_projection_token", "projection_result_code",
+                "projection_session", "overlay_permission_granted", "record_audio_permission_granted",
+                "notification_permission_granted", "audio_session_id", "eq_engine_running"
+            )
             while (keys.hasNext()) {
                 val key = keys.next()
-                // Runtime permissions, service state and unknown future keys are informational only.
-                if (key in setOf("floating_overlay_enabled", "backup_capture", "service_active", "service_paused")) continue
+                // Runtime permissions/session state must never migrate between devices.
+                if (key in runtimeOnlyKeys || key.isBlank() || key.length > 128) continue
                 val value = values.opt(key)
-                val valid = when (key) {
-                    in stringKeys -> value is String
-                    in intKeys -> value is Int || (value is Long && value in Int.MIN_VALUE.toLong()..Int.MAX_VALUE.toLong())
-                    in booleanKeys -> value is Boolean
-                    in floatKeys -> value is Number && (value as Number).toDouble().isFinite()
-                    else -> false
+                if (value == null || value == JSONObject.NULL) continue
+                val targetIsInt = key in intKeys || key in inferredIntKeys
+                val targetIsLong = key in longKeys || key in inferredLongKeys
+                val targetIsFloat = key in floatKeys || key in inferredFloatKeys
+                val targetIsBoolean = key in booleanKeys || key in inferredBooleanKeys
+                val targetIsString = key in stringKeys || key in inferredStringKeys
+                val numeric = value as? Number
+                val numericValue = numeric?.toDouble()
+                val valid = when {
+                    targetIsString -> value is String
+                    targetIsBoolean -> value is Boolean
+                    targetIsInt -> numericValue != null && numericValue.isFinite() && numericValue % 1.0 == 0.0 && numericValue in Int.MIN_VALUE.toDouble()..Int.MAX_VALUE.toDouble()
+                    targetIsLong -> numericValue != null && numericValue.isFinite() && numericValue % 1.0 == 0.0 && numericValue >= Long.MIN_VALUE.toDouble() && numericValue <= Long.MAX_VALUE.toDouble()
+                    targetIsFloat -> numericValue != null && numericValue.isFinite()
+                    // A newer preference key may not exist on the receiving device yet.
+                    // Preserve its JSON scalar type rather than silently dropping it.
+                    else -> value is String || value is Boolean || (numericValue != null && numericValue.isFinite())
                 }
-                if (!valid || value == JSONObject.NULL) continue
-                // SharedPreferences getInt() must never encounter a Long value for an int key.
-                if (key in intKeys) imported.put(key, (value as Number).toInt())
-                else if (key in floatKeys) imported.put(key, (value as Number).toDouble())
-                else imported.put(key, value)
+                if (!valid) continue
+                // Known local types take priority. Otherwise preserve the scalar type
+                // emitted by the source JSON (Integer/Long/Double/String/Boolean).
+                when {
+                    targetIsInt -> imported.put(key, numericValue!!.toInt())
+                    targetIsLong -> imported.put(key, numericValue!!.toLong())
+                    targetIsFloat -> imported.put(key, numericValue!!)
+                    targetIsString && value is String -> imported.put(key, value)
+                    targetIsBoolean && value is Boolean -> imported.put(key, value)
+                    value is String || value is Boolean || value is Number -> imported.put(key, value)
+                }
             }
             // Old backups may not have this marker. Coordinates in a backup are intentional.
             if (values.has("position_x") && values.has("position_y") && !imported.has("position_initialized")) {
@@ -10105,7 +10422,8 @@ class MainActivity : Activity() {
                 }
             }
         } catch (error: Exception) {
-            ThemedToast.makeText(this, if (appLanguage == "id") "Impor backup gagal: ${error.message ?: "file tidak valid"}" else "Backup import failed: ${error.message ?: "invalid file"}", Toast.LENGTH_SHORT).show()
+            android.util.Log.e("FloatingDJBackup", "Portable general-settings import rejected", error)
+            ThemedToast.makeText(this, if (appLanguage == "id") "Impor backup gagal: ${error.message ?: "file tidak valid"}" else "Backup import failed: ${error.message ?: "invalid file"}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -11199,10 +11517,21 @@ class MainActivity : Activity() {
 
     private fun toggleStartStop() {
         when {
-            servicePaused || engineStartFailed -> startPrimaryVisualizer()
-            floatingServiceStarted -> stopFloating()
+            servicePaused || engineStartFailed -> startFloatingFromButton()
+            floatingServiceStarted -> requestStopVisualizerConfirmation()
             else -> startFloatingFromButton()
         }
+    }
+
+    private fun requestStopVisualizerConfirmation() {
+        if (!floatingServiceStarted && !servicePaused) return
+        showGlassConfirmDialog(
+            if (appLanguage == "id") "HENTIKAN VISUALIZER?" else "STOP VISUALIZER?",
+            if (appLanguage == "id") "Ini akan menghentikan audio analysis Visualizer, menghapus Floating Overlay, dan menutup notifikasi Visualizer. EQ Engine berjalan secara independen dan akan tetap aktif beserta notifikasinya. Lanjutkan?" else "This stops the Visualizer audio analysis, removes the Floating Overlay, and closes the Visualizer notification. The independent EQ Engine and its own notification will remain active. Continue?",
+            if (appLanguage == "id") "TIDAK" else "NO",
+            if (appLanguage == "id") "YA, HENTIKAN" else "YES, STOP",
+            0.94f, 0.58f
+        ) { stopFloating() }
     }
 
     private fun updateStartStopButton() {
@@ -11258,6 +11587,60 @@ class MainActivity : Activity() {
         } else startPrimaryVisualizer()
     }
 
+    /** Restore the user's last requested modes after an explicit Visualizer Stop.
+     * MediaProjection grants are one-shot: Android consent is requested again on every restart.
+     */
+    private fun restoreLastVisualizerModesAfterStart() {
+        val wantsOverlay = prefs.getBoolean("restore_floating_overlay_on_start", false)
+        val wantsProjection = prefs.getBoolean("restore_mprojection_on_start", false)
+        if (wantsOverlay && !Settings.canDrawOverlays(this)) {
+            pendingFloatingOverlayEnable = true
+            pendingRestoreProjectionAfterOverlay = wantsProjection
+            val permissionIntent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            try {
+                startActivityForResult(permissionIntent, REQUEST_OVERLAY)
+            } catch (_: Exception) {
+                pendingFloatingOverlayEnable = false
+                pendingRestoreProjectionAfterOverlay = wantsProjection
+                continueRestoreProjectionAfterOverlay()
+            }
+            return
+        }
+        floatingOverlayEnabled = wantsOverlay && Settings.canDrawOverlays(this)
+        prefs.edit().putBoolean("floating_overlay_enabled", floatingOverlayEnabled).apply()
+        setFloatingOverlaySwitch(floatingOverlayEnabled)
+        if (floatingOverlayEnabled) updateFloatingService()
+        if (wantsProjection) requestProjectionConsentForRestore()
+    }
+
+    private fun continueRestoreProjectionAfterOverlay() {
+        val shouldRequest = pendingRestoreProjectionAfterOverlay
+        pendingRestoreProjectionAfterOverlay = false
+        if (shouldRequest) requestProjectionConsentForRestore()
+    }
+
+    private fun requestProjectionConsentForRestore() {
+        if (!floatingServiceStarted || backupRequestPending || backupCaptureEnabled) return
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            // requestPrimaryPermissions normally guarantees this before service start.
+            // If permission was revoked while stopped, request it without claiming capture is active.
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_AUDIO)
+            return
+        }
+        try {
+            backupRequestPending = true
+            val manager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            startActivityForResult(manager.createScreenCaptureIntent(), REQUEST_BACKUP_PROJECTION)
+        } catch (error: Exception) {
+            backupRequestPending = false
+            prefs.edit().putBoolean("restore_mprojection_on_start", false).apply()
+            ThemedToast.makeText(this, "M.Projection perlu diaktifkan ulang secara manual: ${error.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
     private fun startPrimaryVisualizer() {
         val serviceIntent = Intent(this, FloatingVisualizerService::class.java).apply {
             action = FloatingVisualizerService.ACTION_START_PRIMARY
@@ -11277,6 +11660,7 @@ class MainActivity : Activity() {
             setEngineStatusBadge("STARTING")
             audioSourceStatus.text = translateUiText("VISUALIZER · STARTING")
             updateStartStopButton()
+            restoreLastVisualizerModesAfterStart()
         } catch (e: Exception) {
             floatingServiceStarted = false
             engineStartFailed = true
@@ -11289,7 +11673,8 @@ class MainActivity : Activity() {
     private fun enableFloatingOverlay() {
         if (Settings.canDrawOverlays(this)) {
             floatingOverlayEnabled = true
-            prefs.edit().putBoolean("floating_overlay_enabled", true).apply()
+            prefs.edit().putBoolean("floating_overlay_enabled", true)
+                .putBoolean("restore_floating_overlay_on_start", true).apply()
             updateFloatingService()
             ThemedToast.makeText(
                 this,
@@ -11300,6 +11685,8 @@ class MainActivity : Activity() {
         }
 
         pendingFloatingOverlayEnable = true
+        pendingRestoreProjectionAfterOverlay = false
+        prefs.edit().putBoolean("restore_floating_overlay_on_start", true).apply()
         setFloatingOverlaySwitch(false)
         val permissionIntent = Intent(
             Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -11311,7 +11698,8 @@ class MainActivity : Activity() {
     private fun disableFloatingOverlay() {
         pendingFloatingOverlayEnable = false
         floatingOverlayEnabled = false
-        prefs.edit().putBoolean("floating_overlay_enabled", false).apply()
+        prefs.edit().putBoolean("floating_overlay_enabled", false)
+            .putBoolean("restore_floating_overlay_on_start", false).apply()
         updateFloatingService()
         ThemedToast.makeText(this, "Floating bar disembunyikan · audio tetap berjalan", Toast.LENGTH_SHORT).show()
     }
@@ -11348,7 +11736,8 @@ class MainActivity : Activity() {
     private fun disableBackupCapture() {
         backupRequestPending = false
         backupCaptureEnabled = false
-        prefs.edit().putBoolean("backup_capture", false).apply()
+        prefs.edit().putBoolean("backup_capture", false)
+            .putBoolean("restore_mprojection_on_start", false).apply()
         if (floatingServiceStarted) {
             val intent = Intent(this, FloatingVisualizerService::class.java).apply {
                 action = FloatingVisualizerService.ACTION_DISABLE_BACKUP
@@ -11434,9 +11823,11 @@ class MainActivity : Activity() {
             REQUEST_IMPORT_FLOATING_SCENE -> if (resultCode == RESULT_OK && data?.data != null) reviewImportedFloatingScene(data.data!!)
             REQUEST_OVERLAY -> {
                 pendingFloatingOverlayEnable = false
+                val wasRestoreFlow = pendingRestoreProjectionAfterOverlay
                 if (Settings.canDrawOverlays(this)) {
                     floatingOverlayEnabled = true
-                    prefs.edit().putBoolean("floating_overlay_enabled", true).apply()
+                    prefs.edit().putBoolean("floating_overlay_enabled", true)
+                        .putBoolean("restore_floating_overlay_on_start", true).apply()
                     setFloatingOverlaySwitch(true)
                     updateFloatingService()
                     ThemedToast.makeText(
@@ -11450,6 +11841,7 @@ class MainActivity : Activity() {
                     setFloatingOverlaySwitch(false)
                     ThemedToast.makeText(this, "Izin floating belum diberikan", Toast.LENGTH_SHORT).show()
                 }
+                if (wasRestoreFlow) continueRestoreProjectionAfterOverlay()
             }
             REQUEST_BACKUP_PROJECTION -> {
                 backupRequestPending = false
@@ -11463,7 +11855,8 @@ class MainActivity : Activity() {
                     try {
                         startService(intent)
                         backupCaptureEnabled = true
-                        prefs.edit().putBoolean("backup_capture", true).apply()
+                        prefs.edit().putBoolean("backup_capture", true)
+                            .putBoolean("restore_mprojection_on_start", true).apply()
                         audioSourceStatus.text = translateUiText("BACKUP · STARTING")
                     } catch (e: Exception) {
                         setBackupSwitch(false)
@@ -11471,7 +11864,8 @@ class MainActivity : Activity() {
                     }
                 } else {
                     backupCaptureEnabled = false
-                    prefs.edit().putBoolean("backup_capture", false).apply()
+                    prefs.edit().putBoolean("backup_capture", false)
+                        .putBoolean("restore_mprojection_on_start", false).apply()
                     ThemedToast.makeText(this, "Backup capture dibatalkan; Visualizer utama tetap aktif", Toast.LENGTH_SHORT).show()
                 }
                 setBackupSwitch(backupCaptureEnabled)
@@ -11554,34 +11948,106 @@ class MainActivity : Activity() {
 
     private fun stopFloating() {
         updateHandler.removeCallbacks(realtimeUpdate)
+        realtimeUpdateScheduled = false
         engineStartFailed = false
-        val pauseIntent = Intent(this, FloatingVisualizerService::class.java).apply {
-            action = FloatingVisualizerService.ACTION_NOTIFICATION_STOP_AUDIO
-            addFloatingSettings(this)
+        val stopIntent = Intent(this, FloatingVisualizerService::class.java).apply {
+            action = FloatingVisualizerService.ACTION_STOP
         }
         try {
-            // Keep the foreground host/notification alive in its paused state.
-            // MainActivity and the notification now share the exact same Stop action.
-            startServiceIntent(pauseIntent)
+            // Preserve requested modes, not ephemeral runtime grants. Android requires
+            // a fresh MediaProjection consent when the Visualizer starts again.
+            prefs.edit()
+                .putBoolean("restore_mprojection_on_start", backupCaptureEnabled)
+                .putBoolean("restore_floating_overlay_on_start", floatingOverlayEnabled)
+                .apply()
+            // ACTION_STOP terminates only FloatingVisualizerService and removes its
+            // foreground notification. EqEngineService owns a separate lifecycle
+            // and notification, so it is deliberately not stopped here.
+            // The Activity is foreground here. Send a normal service command so a
+            // stale/missing host is not started as a new foreground service just to stop.
+            startService(stopIntent)
             floatingServiceStarted = false
+            servicePaused = false
             backupCaptureEnabled = false
-            servicePaused = true
-            prefs.edit().putBoolean("service_active", false)
+            floatingOverlayEnabled = false
+            prefs.edit()
+                .putBoolean("service_active", false)
+                .putBoolean("service_paused", false)
                 .putBoolean("backup_capture", false)
-                .putBoolean("service_paused", true)
+                .putBoolean("floating_overlay_enabled", false)
                 .apply()
             setBackupSwitch(false)
+            setFloatingOverlaySwitch(false)
             previewBars.forEach { (it as? PreviewBarView)?.setLevel(0.03f) }
             setEngineStatusBadge("STOPPED")
             audioSourceStatus.text = translateUiText("ENGINE · STOPPED")
             updateStartStopButton()
         } catch (error: Exception) {
-            ThemedToast.makeText(this, "Tidak bisa menghentikan audio: ${error.message}", Toast.LENGTH_SHORT).show()
+            ThemedToast.makeText(this, "Tidak bisa menghentikan Visualizer: ${error.message}", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    /**
+     * Brand title gradient follows the selected Theme Studio accent. The animated
+     * highlight only sweeps while the Visualizer engine is actually active.
+     */
+    private fun refreshVisualizerTitleGradient(animate: Boolean) {
+        if (!::visualizerTitle.isInitialized) return
+        visualizerTitleGradientGeneration++
+        val generation = visualizerTitleGradientGeneration
+        visualizerTitleGradientAnimator?.cancel()
+        visualizerTitleGradientAnimator = null
+
+        val render = Runnable {
+            if (!::visualizerTitle.isInitialized || isFinishing || isDestroyed || generation != visualizerTitleGradientGeneration) return@Runnable
+            val measured = visualizerTitle.paint.measureText(visualizerTitle.text?.toString().orEmpty())
+            val width = maxOf(visualizerTitle.width.toFloat(), measured, 80.dp().toFloat()).coerceAtLeast(1f)
+            val accent = currentAccent()
+            val edge = if (themeMode == THEME_CUSTOM) themeEdgeColor else blend(accent, Color.WHITE, 0.34f)
+            val highlight = blend(accent, Color.WHITE, if (isLightTheme()) 0.27f else 0.62f)
+            val base = if (isLightTheme()) darken(accent, 0.08f) else accent
+            visualizerTitleShine?.apply {
+                setBounds(0, 0, visualizerTitle.width, visualizerTitle.height)
+                setPalette(accent, edge)
+                setProgress(0f)
+            }
+            val shader = LinearGradient(
+                -width, 0f, width, 0f,
+                intArrayOf(base, highlight, edge, base),
+                floatArrayOf(0f, 0.36f, 0.70f, 1f),
+                Shader.TileMode.CLAMP
+            )
+            visualizerTitle.paint.shader = shader
+            visualizerTitle.invalidate()
+
+            if (animate && visualizerTitleActive && !isFinishing && !isDestroyed) {
+                // ValueAnimator is driven by Android's Choreographer, so frames follow
+                // the display's available refresh cadence (60/90/120 Hz where supported).
+                visualizerTitleGradientAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+                    duration = 3600L
+                    repeatCount = ValueAnimator.INFINITE
+                    interpolator = LinearInterpolator()
+                    addUpdateListener { valueAnimator ->
+                        val progress = valueAnimator.animatedValue as Float
+                        val matrix = Matrix().apply { setTranslate(-width + progress * width * 2f, 0f) }
+                        shader.setLocalMatrix(matrix)
+                        visualizerTitleShine?.setProgress(progress)
+                        visualizerTitle.invalidate()
+                    }
+                    start()
+                }
+            } else {
+                shader.setLocalMatrix(Matrix())
+                visualizerTitleShine?.setProgress(0f)
+            }
+        }
+        if (visualizerTitle.width <= 0) visualizerTitle.post(render) else render.run()
     }
 
     private fun setEngineStatusBadge(state: String) {
         val isActive = state == "ON"
+        visualizerTitleActive = isActive
+        refreshVisualizerTitleGradient(isActive)
         val isStarting = state == "STARTING"
         val bgColors = when {
             isActive -> intArrayOf(Color.parseColor("#2BA879"), Color.parseColor("#167653"))
@@ -11635,6 +12101,16 @@ class MainActivity : Activity() {
                 setEngineStatusBadge("ERROR")
                 audioSourceStatus.text = translateUiText("VISUALIZER · UNAVAILABLE")
                 ThemedToast.makeText(this, status.substringAfter(':', "Visualizer tidak tersedia"), Toast.LENGTH_SHORT).show()
+            }
+            status.startsWith("BACKUP_RECONFIG_ERROR") -> {
+                // A settings update failure is not the same as losing MediaProjection.
+                // Keep its user-selected route switch enabled and surface the warning.
+                backupCaptureEnabled = true
+                prefs.edit().putBoolean("backup_capture", true).apply()
+                setBackupSwitch(true)
+                setEngineStatusBadge("ERROR")
+                audioSourceStatus.text = translateUiText("MEDIA PROJECTION · CHECK CAPTURE")
+                ThemedToast.makeText(this, status.substringAfter(':', "Pengaturan FFT/Hop belum berhasil diterapkan; sesi M.Projection dipertahankan"), Toast.LENGTH_SHORT).show()
             }
             status.startsWith("BACKUP_ERROR") -> {
                 backupCaptureEnabled = false
