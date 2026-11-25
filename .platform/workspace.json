@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "id": "Floating-DJ-Visualizer-V3.0.38.2-Exact-Display-Gap-Symmetric-Header",
+      "name": "Floating-DJ-Visualizer-V3.0.38.2-Exact-Display-Gap-Symmetric-Header",
+      "root": "",
+      "buildSystem": "native",
+      "settings": {},
+      "modules": [
+        {
+          "id": "app",
+          "name": "app",
+          "dir": "app"
+        }
+      ],
+      "libraries": []
+    }
+  ]
+}

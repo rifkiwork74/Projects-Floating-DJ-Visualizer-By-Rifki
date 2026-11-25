@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Full-bleed glass navy base. The Android launcher owns the icon mask. -->
+    <path android:fillColor="#06142B" android:pathData="M0,0 H108 V108 H0 Z" />
+    <!-- Broad upper glass reflection, deliberately kept low-contrast. -->
+    <path android:fillColor="#0B274B" android:pathData="M0,0 H108 V34 C87,24 68,20 50,24 C28,28 12,43 0,61 Z" />
+    <path android:fillColor="#10345F" android:pathData="M0,0 H108 V12 C82,8 57,13 38,24 C20,34 9,46 0,61 Z" />
+    <path android:fillColor="#071D3A" android:pathData="M0,62 C19,43 39,34 61,33 C80,32 95,36 108,42 V60 C86,52 63,54 45,63 C26,72 12,84 0,96 Z" />
+    <!-- Lower-right reflection gives the 07 background a soft glass base. -->
+    <path android:fillColor="#0A2041" android:pathData="M0,89 C25,103 54,105 79,96 C93,91 102,84 108,76 V108 H0 Z" />
+    <path android:fillColor="#12335C" android:pathData="M47,108 C73,101 94,88 108,73 V88 C93,102 74,108 57,108 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#2A77AF"
+        android:strokeAlpha="0.30"
+        android:strokeWidth="1.0"
+        android:strokeLineCap="round"
+        android:pathData="M8,49 C26,29 49,20 73,20 C87,20 97,23 105,27" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#4CB6E8"
+        android:strokeAlpha="0.22"
+        android:strokeWidth="1.0"
+        android:strokeLineCap="round"
+        android:pathData="M57,105 C79,99 96,87 106,75" />
+</vector>

@@ -1,0 +1,6 @@
+#v2
+3
+/storage/emulated/0/Android/data/com.tyron.code/files/codeassist/projects/project-2/app/CHANGELOG.md	0	554	text
+/storage/emulated/0/Android/data/com.tyron.code/files/codeassist/projects/project-2/docs/V3.0.38.2-Exact-Display-Gap-Symmetric-Header-Transitions.md	1635	0	text
+/storage/emulated/0/Android/data/com.tyron.code/files/codeassist/projects/project-2/docs/V3.0.38.1-Display-Geometry-Hold-Ring-Compile-Fix.md	2344	0	text
+/storage/emulated/0/Android/data/com.tyron.code/files/codeassist/projects/project-2/docs/V3.0.38.0-Update-Notes.md	2236	0	text

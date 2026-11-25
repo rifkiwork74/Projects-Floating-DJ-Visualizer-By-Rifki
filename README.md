@@ -1,6 +1,9 @@
-<div align="center">
+﻿<div align="center">
 
-# Floating DJ Visualizer
+<h1>
+  <img src="https://img.icons8.com/ios-filled/50/2196F3/headphones.png" width="32" alt="Headphone" />
+  Floating DJ Visualizer
+</h1>
 
 ### Android Floating Audio Visualizer &amp; Experimental Equalizer
 
@@ -9,7 +12,8 @@
 <p>
   <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&amp;logo=android&amp;logoColor=white" alt="Platform: Android">
   <img src="https://img.shields.io/badge/Language-Kotlin-7F52FF?style=for-the-badge&amp;logo=kotlin&amp;logoColor=white" alt="Language: Kotlin">
-  <img src="https://img.shields.io/badge/Version-v3.0.19.0-2563EB?style=for-the-badge" alt="Version 3.0.19.0">
+  <img src="https://img.shields.io/badge/Version-v3.0.38.2-2563EB?style=for-the-badge" alt="Version 3.0.38.2">
+  <img src="https://img.shields.io/badge/Version%20Code-126-0F766E?style=for-the-badge" alt="Version code 126">
   <a href="https://github.com/tyron12233/CodeAssist">
     <img src="https://img.shields.io/badge/IDE-CodeAssist-24292F?style=for-the-badge&amp;logo=github&amp;logoColor=white" alt="Built with CodeAssist">
   </a>
@@ -18,17 +22,21 @@
 **Visualize your sound. Customize every layer.**
 
 <p>
-  <strong>&#127468;&#127463; EN</strong> - A customizable, audio-reactive floating visualizer with independent layers, reusable scenes, Theme Studio, and an experimental device-dependent Equalizer Engine.
+  <strong>&#127468;&#127463; EN</strong> — A customizable, audio-reactive floating visualizer with independent layers, reusable scenes, Theme Studio, live profile-aware previews, and an experimental device-dependent Equalizer Engine.
   <br>
-  <strong>&#127470;&#127465; ID</strong> - Floating visualizer responsif yang dapat dikustomisasi dengan layer independen, scene yang dapat digunakan kembali, Theme Studio, dan Equalizer Engine eksperimental yang bergantung pada perangkat.
+  <strong>&#127470;&#127465; ID</strong> — Floating visualizer responsif yang dapat dikustomisasi dengan layer independen, scene yang dapat digunakan kembali, Theme Studio, pratinjau profile secara langsung, serta Equalizer Engine eksperimental yang bergantung pada perangkat.
 </p>
 
 <p>
   <a href="#app-preview">Preview</a> &middot;
+  <a href="#about">About</a> &middot;
   <a href="#key-features">Features</a> &middot;
-  <a href="#audio-processing-notes">Audio Notes</a> &middot;
+  <a href="#installation">Installation</a> &middot;
+  <a href="#repository-guide">Repository</a> &middot;
   <a href="#compatibility">Compatibility</a> &middot;
+  <a href="#audio-processing-notes">Audio Notes</a> &middot;
   <a href="#changelog">Changelog</a> &middot;
+  <a href="app/CHANGELOG.md">Full Changelog</a> &middot;
   <a href="#contact">Contact</a>
 </p>
 
@@ -41,6 +49,12 @@
 - [App Preview | Pratinjau Aplikasi](#app-preview)
 - [About | Tentang Proyek](#about)
 - [Key Features | Fitur Utama](#key-features)
+- [Installation | Instalasi](#installation)
+- [Repository Guide | Struktur Repository](#repository-guide)
+  - [📸 Screenshot Gallery](dokumentasi/)
+  - [🧪 Test Presets](Test-Preset/)
+  - [📚 Technical Documentation](docs/)
+  - [📜 Complete Changelog](app/CHANGELOG.md)
 - [Test Presets | Preset Uji Coba](#test-presets)
 - [Technology Stack | Teknologi](#technology-stack)
 - [Compatibility | Kompatibilitas](#compatibility)
@@ -52,72 +66,32 @@
 
 <a id="app-preview"></a>
 
-## App Preview
+## App Preview | Pratinjau Aplikasi
 
-*Pratinjau Aplikasi*
-
-<details open>
-<summary><strong>&#127468;&#127463; Open screenshot gallery / &#127470;&#127465; Buka galeri (6 images)</strong></summary>
-
-<p align="center"><sub>Tap a thumbnail to view the full-size image. / Ketuk thumbnail untuk melihat gambar ukuran penuh.</sub></p>
+<p align="center"><sub>Tap any image to open its full-size version. / Ketuk gambar untuk membuka ukuran penuh.</sub></p>
 
 <div align="center">
-
-<!-- Row 1: each row is a separate one-row table so GitHub does not zebra-stripe the gallery cards. -->
-<table align="center">
+<table align="center" width="100%">
   <tr>
-    <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-1.jpg"><img src="dokumentasi/dokumentasi-1.jpg" width="132" alt="Main application dashboard"></a>
-      <br><strong>01 · Main Dashboard</strong>
-      <br><sub>Halaman Utama</sub>
-      <br><sub>EN: App overview and main controls.</sub><br><sub>ID: Ringkasan aplikasi dan kontrol utama.</sub>
-    </td>
-    <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-2.jpg"><img src="dokumentasi/dokumentasi-2.jpg" width="132" alt="Floating profiles and layers"></a>
-      <br><strong>02 · Floating Profiles</strong>
-      <br><sub>Profile dan Layer</sub>
-      <br><sub>EN: Manage independent visualizer profiles and layers.</sub><br><sub>ID: Kelola profile dan layer visualizer secara terpisah.</sub>
-    </td>
-    <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-3.jpg"><img src="dokumentasi/dokumentasi-3.jpg" width="132" alt="Bar Palette Studio"></a>
-      <br><strong>03 · Bar Palette Studio</strong>
-      <br><sub>Studio Palet Warna Bar</sub>
-      <br><sub>EN: Customize colors and preview palette choices.</sub><br><sub>ID: Atur warna dan lihat pratinjau pilihan palet.</sub>
-    </td>
+    <td align="center" width="25%" style="padding: 10px 8px;"><a href="dokumentasi/dokumentasi-1.jpg"><img src="dokumentasi/dokumentasi-1.jpg" width="116" alt="Application screenshot 1"></a></td>
+    <td align="center" width="25%" style="padding: 10px 8px;"><a href="dokumentasi/dokumentasi-2.jpg"><img src="dokumentasi/dokumentasi-2.jpg" width="116" alt="Application screenshot 2"></a></td>
+    <td align="center" width="25%" style="padding: 10px 8px;"><a href="dokumentasi/dokumentasi-3.jpg"><img src="dokumentasi/dokumentasi-3.jpg" width="116" alt="Application screenshot 3"></a></td>
+    <td align="center" width="25%" style="padding: 10px 8px;"><a href="dokumentasi/dokumentasi-4.jpg"><img src="dokumentasi/dokumentasi-4.jpg" width="116" alt="Application screenshot 4"></a></td>
+  </tr>
+  <tr>
+    <td align="center" width="25%" style="padding: 10px 8px;"><a href="dokumentasi/dokumentasi-5.jpg"><img src="dokumentasi/dokumentasi-5.jpg" width="116" alt="Application screenshot 5"></a></td>
+    <td align="center" width="25%" style="padding: 10px 8px;"><a href="dokumentasi/dokumentasi-6.jpg"><img src="dokumentasi/dokumentasi-6.jpg" width="116" alt="Application screenshot 6"></a></td>
+    <td align="center" width="25%" style="padding: 10px 8px;"><a href="dokumentasi/dokumentasi-7.jpg"><img src="dokumentasi/dokumentasi-7.jpg" width="116" alt="Application screenshot 7"></a></td>
+    <td align="center" width="25%" style="padding: 10px 8px;"><a href="dokumentasi/dokumentasi-8.jpg"><img src="dokumentasi/dokumentasi-8.jpg" width="116" alt="Application screenshot 8"></a></td>
   </tr>
 </table>
-
-<br>
-
-<!-- Row 2 uses the same one-row table structure and alignment as row 1. -->
-<table align="center">
-  <tr>
-    <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-4.jpg"><img src="dokumentasi/dokumentasi-4.jpg" width="132" alt="Equalizer bands interface"></a>
-      <br><strong>04 · Equalizer Bands</strong>
-      <br><sub>Band Equalizer</sub>
-      <br><sub>EN: Explore the frequency-band controls.</sub><br><sub>ID: Jelajahi kontrol setiap pita frekuensi.</sub>
-    </td>
-    <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-5.jpg"><img src="dokumentasi/dokumentasi-5.jpg" width="132" alt="Equalizer components and audio effects"></a>
-      <br><strong>05 · Equalizer Components</strong>
-      <br><sub>Komponen Equalizer dan Efek Audio</sub>
-      <br><sub>EN: Review available EQ and audio-effect controls.</sub><br><sub>ID: Lihat kontrol EQ dan efek audio yang tersedia.</sub>
-    </td>
-    <td align="center" width="33%">
-      <a href="dokumentasi/dokumentasi-6.jpg"><img src="dokumentasi/dokumentasi-6.jpg" width="132" alt="100 bar color palettes"></a>
-      <br><strong>06 · 100 Bar Color Palettes</strong>
-      <br><sub>Galeri 100 Palet Warna Bar</sub>
-      <br><sub>EN: Browse the built-in collection of color palettes.</sub><br><sub>ID: Jelajahi koleksi palet warna bawaan.</sub>
-    </td>
-  </tr>
-</table>
-
 </div>
-</details>
 
 <p align="center">
-  <sub>&#127468;&#127463; More screenshots are available in <a href="dokumentasi/">dokumentasi/</a>. / &#127470;&#127465; Tangkapan layar lainnya tersedia di folder <a href="dokumentasi/">dokumentasi/</a>.</sub>
+  <strong>📸 More screenshots &amp; visual documentation</strong><br>
+  This homepage preview intentionally shows only eight selected images. Open the <a href="dokumentasi/">📂 <code>dokumentasi/</code> folder</a> to browse the complete screenshot collection and additional visual references. Screenshot image files in this folder use the <code>.jpg</code> format.<br>
+  <strong>📸 Dokumentasi visual lainnya</strong><br>
+  Pratinjau halaman utama ini sengaja menampilkan delapan gambar pilihan saja. Buka <a href="dokumentasi/">📂 folder <code>dokumentasi/</code></a> untuk menjelajahi seluruh koleksi screenshot dan referensi visual tambahan. File gambar screenshot di folder ini menggunakan format <code>.jpg</code>.
 </p>
 
 ---
@@ -128,17 +102,17 @@
 
 **&#127468;&#127463; English**
 
-Floating DJ Visualizer is an Android application developed by **Rifki**. It began as a floating audio visualizer and has evolved into a layered visual workspace for real-time audio-reactive displays. The application includes independent floating profiles, per-layer controls, reusable scenes, detailed appearance settings, and an additional experimental Equalizer Engine.
+Floating DJ Visualizer is an Android application developed by **Rifki**. It began as a floating audio visualizer and has evolved into a layered visual workspace for real-time audio-reactive displays. The application includes independent floating profiles, per-layer controls, reusable scenes, appearance customization, profile-aware Live Spectrum previews, and an additional experimental Equalizer Engine.
 
 The project is developed directly on an Android device using the open-source [CodeAssist IDE](https://github.com/tyron12233/CodeAssist).
 
 **&#127470;&#127465; Bahasa Indonesia**
 
-Floating DJ Visualizer adalah aplikasi Android yang dikembangkan oleh **Rifki**. Berawal dari floating audio visualizer, proyek ini berkembang menjadi workspace visual berlapis yang merespons audio secara real-time. Aplikasi menyediakan floating profile independen, kontrol setiap layer, scene yang dapat digunakan kembali, pengaturan tampilan mendalam, serta Equalizer Engine tambahan yang masih bersifat eksperimental.
+Floating DJ Visualizer adalah aplikasi Android yang dikembangkan oleh **Rifki**. Berawal dari floating audio visualizer, proyek ini berkembang menjadi workspace visual berlapis yang merespons audio secara real-time. Aplikasi menyediakan floating profile independen, kontrol setiap layer, scene yang dapat digunakan kembali, kustomisasi tampilan, pratinjau Live Spectrum sesuai profile, serta Equalizer Engine tambahan yang masih bersifat eksperimental.
 
 Proyek ini dikembangkan langsung melalui perangkat Android menggunakan [CodeAssist IDE](https://github.com/tyron12233/CodeAssist) yang bersifat open-source.
 
-> **Project status / Status proyek:** V3.0.19.0 is the current documented development line. The Equalizer Engine is experimental and device-dependent. / V3.0.19.0 adalah lini pengembangan yang didokumentasikan saat ini. Equalizer Engine masih eksperimental dan bergantung pada perangkat.
+> **Current version / Versi saat ini:** `3.0.38.2` (`versionCode 126`). The Equalizer Engine remains experimental and device-dependent. / Equalizer Engine masih bersifat eksperimental dan bergantung pada perangkat.
 
 ---
 
@@ -150,25 +124,27 @@ Proyek ini dikembangkan langsung melalui perangkat Android menggunakan [CodeAssi
 
 | Feature | &#127468;&#127463; English | &#127470;&#127465; Bahasa Indonesia |
 |---|---|---|
-| **Floating Overlay** | Displays the visualizer above other apps after overlay permission is granted. | Menampilkan visualizer di atas aplikasi lain setelah izin overlay diberikan. |
+| **Floating Overlay** | Displays the visualizer above other apps after the required overlay permission is granted. | Menampilkan visualizer di atas aplikasi lain setelah izin overlay diberikan. |
 | **Visualizer Modes** | Supports Single and Horizontal / DJ layouts. | Mendukung layout Single dan Horizontal / DJ. |
-| **Bar Controls** | Adjust bar count, width, height, thickness, gap, scale, opacity, glow, and corner shape where supported. | Mengatur jumlah bar, lebar, tinggi, ketebalan, jarak, skala, opacity, glow, dan bentuk sudut sesuai mode. |
-| **Frequency Display** | Shows frequency ranges and activity levels for the selected mode. | Menampilkan rentang frekuensi dan level aktivitas sesuai mode yang dipilih. |
-| **Appearance Styles** | Clean, Glossy, Neon, and Frosted styles with editable color profiles. | Gaya Clean, Glossy, Neon, dan Frosted dengan profil warna yang dapat diedit. |
-| **Position Studio** | Controls the position, movement, and rotation of each floating layer. | Mengatur posisi, pergerakan, dan rotasi setiap floating layer. |
+| **Bar Controls** | Configure supported bar properties such as count, width, height, thickness, gap, scale, opacity, glow, and corner shape. | Mengatur properti bar yang didukung seperti jumlah, lebar, tinggi, ketebalan, jarak, skala, opacity, glow, dan bentuk sudut. |
+| **Frequency Display** | Shows frequency ranges and activity levels for the selected visualization mode. | Menampilkan rentang frekuensi dan level aktivitas sesuai mode visualisasi yang dipilih. |
+| **Appearance Styles** | Clean, Glossy, Neon, and Frosted styles with editable color profiles. | Gaya Clean, Glossy, Neon, dan Frosted dengan profile warna yang dapat diedit. |
+| **Position Studio** | Controls the position, movement, and rotation of floating layers. | Mengatur posisi, pergerakan, dan rotasi floating layer. |
 
 ### 2. Visual Studio &amp; Workflow | Studio Visual &amp; Alur Kerja
 
 | Feature | &#127468;&#127463; English | &#127470;&#127465; Bahasa Indonesia |
 |---|---|---|
 | **Theme Studio** | Glossy, Custom, System, Dark, and Light interface themes. | Tema antarmuka Glossy, Custom, System, Dark, dan Light. |
-| **Floating Profiles &amp; Layers** | Manage multiple independent layers and change their order. | Mengelola beberapa layer independen dan mengubah urutannya. |
-| **Per-Slider Linking** | Link one supported parameter to multiple compatible layers, with mode-aware target selection. | Menghubungkan satu parameter ke beberapa layer yang kompatibel dengan pemeriksaan mode. |
+| **Floating Profiles &amp; Layers** | Manage independent layers, select profiles, and change layer order. | Mengelola layer independen, memilih profile, dan mengubah urutan layer. |
+| **Linked Controls** | Link supported parameters across compatible layers with mode-aware target handling. | Menghubungkan parameter yang didukung ke beberapa layer kompatibel dengan pemeriksaan mode. |
 | **Copy To** | Copy supported profile or appearance settings to another layer. | Menyalin pengaturan profile atau tampilan yang didukung ke layer lain. |
-| **Scene Manager** | Save, load, update, rename, delete, import, and export floating scenes. | Menyimpan, memuat, memperbarui, mengganti nama, menghapus, mengimpor, dan mengekspor scene. |
-| **Live Numeric Preview** | Preview slider and numeric changes, then commit or cancel them. | Melihat pratinjau perubahan slider dan angka, lalu menyimpan atau membatalkannya. |
-| **General Import / Export** | Back up supported settings, profiles, scenes, and EQ data with validation and import review. Runtime permissions and active engines are not transferred or auto-started. | Mencadangkan pengaturan, profile, scene, dan data EQ yang didukung melalui validasi dan tinjauan impor. Izin runtime serta engine aktif tidak dipindahkan atau dijalankan otomatis. |
-| **Notification Controls** | Theme-aware controls for supported visualizer and EQ actions. | Kontrol notifikasi yang mengikuti tema untuk fungsi visualizer dan EQ yang didukung. |
+| **Scene Manager** | Save, load, update, rename, delete, import, and export floating scenes. | Menyimpan, memuat, memperbarui, mengganti nama, menghapus, mengimpor, dan mengekspor scene floating. |
+| **Color Album** | Browse built-in bar-color presets and preview supported palette choices. | Menjelajahi preset warna bar bawaan dan melihat pratinjau palet yang didukung. |
+| **Live Preview** | Preview profile and display changes while editing, with profile-aware mode and frequency information. | Melihat perubahan profile dan display saat mengedit, termasuk informasi mode dan frekuensi sesuai profile. |
+| **Global Audio Analysis** | Provides shared FFT and Hop settings for the audio-analysis engine. | Menyediakan pengaturan FFT dan Hop global untuk engine analisis audio. |
+| **General Import / Export** | Back up and restore supported settings, profiles, scenes, and EQ data with validation and import review. Runtime permissions and active engines are not transferred or auto-started. | Mencadangkan dan memulihkan pengaturan, profile, scene, serta data EQ yang didukung melalui validasi dan tinjauan impor. Izin runtime dan engine aktif tidak ikut dipindahkan atau dijalankan otomatis. |
+| **Notification Controls** | Provides theme-aware controls for supported visualizer and EQ actions. | Menyediakan kontrol notifikasi yang mengikuti tema untuk fungsi visualizer dan EQ yang didukung. |
 
 ### 3. Experimental Equalizer Engine | Equalizer Eksperimental
 
@@ -176,9 +152,69 @@ Proyek ini dikembangkan langsung melalui perangkat Android menggunakan [CodeAssi
 |---|---|---|
 | **Adaptive EQ Bands** | Shows supported band layouts detected by the active backend, including 5-band or 10-band configurations where available. | Menampilkan susunan band yang terdeteksi pada backend aktif, termasuk konfigurasi 5-band atau 10-band jika tersedia. |
 | **Band Analyzer &amp; Presets** | Reports detected band capabilities and filters built-in presets to matching band counts. | Menampilkan kemampuan band yang terdeteksi dan menyaring preset bawaan berdasarkan jumlah band yang sesuai. |
-| **Band Editing** | Vertical faders, direct dB input, and individual band reset. | Fader vertikal, input dB langsung, dan reset setiap band. |
+| **Band Editing** | Provides vertical faders, direct dB input, and individual band reset. | Menyediakan fader vertikal, input dB langsung, dan reset setiap band. |
 | **Additional Effects** | Bass Boost, Virtualizer, and Limiter controls where supported by the device and backend. | Kontrol Bass Boost, Virtualizer, dan Limiter sesuai dukungan perangkat dan backend. |
-| **EQ Preset Import / Export** | Import and export supported EQ preset files. | Mengimpor dan mengekspor file preset EQ yang didukung. |
+| **EQ Preset Import / Export** | Imports and exports supported EQ preset files. | Mengimpor dan mengekspor file preset EQ yang didukung. |
+
+---
+
+<a id="installation"></a>
+
+## Installation | Instalasi
+
+### Before installing | Sebelum instalasi
+
+**&#127468;&#127463; English**
+
+Floating DJ Visualizer is currently distributed through GitHub Releases and is **not listed on Google Play**. Android or Google Play Protect may therefore display an unknown-source, unverified-app, or scanning notice when an APK is installed outside Google Play.
+
+A warning should be read carefully. It does not automatically prove that an app is malicious, but it must not be ignored. The developer cannot guarantee that every device or security scanner will classify every build in the same way.
+
+**&#127470;&#127465; Bahasa Indonesia**
+
+Floating DJ Visualizer saat ini didistribusikan melalui GitHub Releases dan **belum tersedia di Google Play**. Karena APK dipasang dari luar Google Play, Android atau Google Play Protect mungkin menampilkan pemberitahuan sumber tidak dikenal, aplikasi belum terverifikasi, atau permintaan pemindaian.
+
+Setiap peringatan harus dibaca dengan teliti. Peringatan tersebut tidak otomatis membuktikan bahwa aplikasi berbahaya, tetapi juga tidak boleh diabaikan. Pengembang tidak dapat menjamin bahwa setiap perangkat atau pemindai keamanan akan memberikan klasifikasi yang sama untuk setiap build.
+
+### Step 1 — Download from the official release page | Langkah 1 — Unduh dari halaman rilis resmi
+
+1. Open the project's [GitHub Releases page](https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/releases).
+2. Select the release you intend to install and read its release notes.
+3. Download the APK asset published on that release page. Avoid APKs from unofficial mirrors or unknown re-uploaders.
+
+1. Buka halaman [GitHub Releases resmi proyek](https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/releases).
+2. Pilih rilis yang ingin dipasang dan baca release notes-nya.
+3. Unduh file APK yang tersedia pada halaman rilis tersebut. Hindari APK dari mirror tidak resmi atau pengunggah yang tidak dikenal.
+
+### Step 2 — Check the APK | Langkah 2 — Periksa APK
+
+**EN:** Before opening the APK, check that it came from the official repository, confirm the release version, and review any published checksum or signing-certificate information. A matching digital signature helps confirm that an APK was signed by the same signing key as the reference release; it does **not** prove that the application is harmless or independently audited.
+
+**ID:** Sebelum membuka APK, pastikan file berasal dari repository resmi, cocokkan versi rilis, dan periksa checksum atau informasi sertifikat tanda tangan apabila tersedia. Tanda tangan digital yang cocok membantu memastikan APK ditandatangani menggunakan signing key yang sama dengan rilis pembanding; tanda tangan tersebut **bukan** bukti bahwa aplikasi pasti aman atau telah diaudit secara independen.
+
+### Step 3 — Install through Android | Langkah 3 — Instal melalui Android
+
+1. Open the downloaded APK using your browser's download list or the device's file manager.
+2. If Android asks for permission to install apps from that source, review the prompt. Allow the source only when you have verified that the APK came from the official release page and you intend to install it.
+3. Return to the installer and follow the Android installation prompts.
+4. After installation, consider disabling the temporary **Allow from this source** permission again.
+
+1. Buka APK yang telah diunduh melalui daftar unduhan browser atau file manager perangkat.
+2. Jika Android meminta izin untuk memasang aplikasi dari sumber tersebut, baca pemberitahuannya. Izinkan sumber hanya setelah memastikan APK berasal dari halaman rilis resmi dan kamu memang ingin memasangnya.
+3. Kembali ke installer dan ikuti petunjuk instalasi Android.
+4. Setelah instalasi selesai, pertimbangkan untuk menonaktifkan kembali izin sementara **Izinkan dari sumber ini**.
+
+### Step 4 — If Play Protect displays a warning | Langkah 4 — Jika Play Protect menampilkan peringatan
+
+**EN:** Let Play Protect complete its scan and read the exact result. If it reports the APK as harmful, blocks installation, or the source/signature cannot be verified, cancel the installation and keep Play Protect enabled. Do not disable security scanning, turn off mobile data to avoid a check, or force an installation past a harmful-app warning. You can report the warning to the developer so the release can be reviewed.
+
+**ID:** Biarkan Play Protect menyelesaikan pemindaian dan baca hasilnya secara lengkap. Jika APK dinyatakan berbahaya, instalasi diblokir, atau sumber/tanda tangannya tidak dapat diverifikasi, batalkan instalasi dan biarkan Play Protect tetap aktif. Jangan menonaktifkan pemindaian keamanan, mematikan data seluler untuk menghindari pemeriksaan, atau memaksakan instalasi melewati peringatan aplikasi berbahaya. Kamu dapat mengirimkan informasi peringatan tersebut kepada pengembang agar rilisnya dapat ditinjau.
+
+### Step 5 — Grant only the permissions you need | Langkah 5 — Berikan izin seperlunya
+
+**EN:** The floating overlay requires Android's display-over-other-apps permission. Audio visualization or capture features may request audio-related or MediaProjection access depending on the selected mode and Android version. Review each system dialog and grant only the permissions needed for the features you intend to use. You can revoke permissions later from Android Settings.
+
+**ID:** Floating overlay memerlukan izin Android untuk tampil di atas aplikasi lain. Fitur visualisasi atau capture audio dapat meminta akses terkait audio atau MediaProjection sesuai mode yang dipilih dan versi Android. Periksa setiap dialog sistem dan berikan hanya izin yang diperlukan untuk fitur yang ingin digunakan. Izin dapat dicabut kembali melalui Pengaturan Android.
 
 ---
 
@@ -188,11 +224,33 @@ Proyek ini dikembangkan langsung melalui perangkat Android menggunakan [CodeAssi
 
 **&#127468;&#127463; English**
 
-Example configurations from development and testing may be available in [`Test - Preset/`](Test%20-%20Preset/). Use files compatible with your application version and review their contents before applying them.
+Example configurations from development and testing may be available in [`Test-Preset/`](Test-Preset/). Use files compatible with your application version and review their contents before applying them.
 
 **&#127470;&#127465; Bahasa Indonesia**
 
-Contoh konfigurasi dari proses pengembangan dan pengujian dapat tersedia di folder [`Test - Preset/`](Test%20-%20Preset/). Gunakan file yang sesuai dengan versi aplikasi dan periksa isinya sebelum diterapkan.
+Contoh konfigurasi dari proses pengembangan dan pengujian dapat tersedia di folder [`Test-Preset/`](Test-Preset/). Gunakan file yang sesuai dengan versi aplikasi dan periksa isinya sebelum diterapkan.
+
+---
+
+<a id="repository-guide"></a>
+
+## Repository Guide | Panduan Struktur Repository
+
+The root `README.md` is rendered automatically on the GitHub repository homepage. It displays eight curated screenshots, while the linked `dokumentasi/` directory provides access to the larger JPG collection. GitHub lists newly committed files in that folder automatically; adding a new image does not require embedding every image into this homepage.
+
+File `README.md` di root repository akan ditampilkan otomatis pada halaman utama repository GitHub. README ini menampilkan delapan screenshot pilihan, sedangkan folder `dokumentasi/` yang ditautkan menyediakan akses ke koleksi JPG yang lebih lengkap. GitHub akan menampilkan file baru yang di-commit ke folder tersebut secara otomatis; gambar tambahan tidak perlu dimasukkan satu per satu ke halaman utama.
+
+| Path | What you will find / Isi folder atau file |
+|---|---|
+| 📸 [**`dokumentasi/`**](dokumentasi/) | Additional application screenshots, visual documentation, and image references. / Screenshot aplikasi, dokumentasi visual, dan referensi gambar lainnya. |
+| 🧪 [**`Test-Preset/`**](Test-Preset/) | Test configurations and preset files used for development or experimentation. Check compatibility before importing. / Konfigurasi pengujian dan file preset untuk pengembangan atau eksperimen. Periksa kompatibilitas sebelum mengimpor. |
+| 📚 [**`docs/`**](docs/) | Supplementary technical documents, implementation notes, and version-specific update records. / Dokumen teknis tambahan, catatan implementasi, dan catatan pembaruan versi tertentu. |
+| 📱 [**`app/`**](app/) | Android application module, including source code, resources, and app configuration. / Modul aplikasi Android, termasuk source code, resource, dan konfigurasi aplikasi. |
+| 🧾 [**`app/CHANGELOG.md`**](app/CHANGELOG.md) | The detailed, cumulative development changelog. Use this file for the fuller version-by-version history beyond the summary in this README. / Changelog pengembangan kumulatif yang lebih lengkap. Buka file ini untuk melihat riwayat versi lebih mendalam di luar ringkasan README. |
+| ⚙️ [**`.platform/`**](.platform/) | Platform-specific project configuration and metadata. / Konfigurasi khusus platform dan metadata proyek. |
+| 📄 [**`LICENSE`**](LICENSE) | Project license and usage terms. / Lisensi proyek dan ketentuan penggunaannya. |
+
+<sub>**About `.git/`:** this is Git's internal local metadata directory. It is normally managed by Git itself and is not presented as a regular browsable project folder on GitHub. / **Tentang `.git/`:** folder ini berisi metadata internal Git di perangkat lokal. Folder tersebut dikelola oleh Git dan biasanya tidak ditampilkan sebagai folder proyek yang dapat dijelajahi di GitHub.</sub>
 
 ---
 
@@ -220,8 +278,10 @@ Contoh konfigurasi dari proses pengembangan dan pengujian dapat tersedia di fold
 |---|---|
 | Minimum Android | Android 8.0 (API 26) |
 | Target SDK | API 36 |
+| Package name | `com.floatingdj.visualizer` |
+| Version | `3.0.38.2` (`versionCode 126`) |
 | Device | Android phones and compatible devices |
-| Floating Overlay | Requires the user's Android "Display over other apps" permission. / Memerlukan izin Android "Tampilkan di atas aplikasi lain". |
+| Floating Overlay | Requires the user's Android **Display over other apps** permission. / Memerlukan izin Android **Tampilkan di atas aplikasi lain**. |
 | Audio effects | Availability and control vary by device, ROM, player, and active audio route. / Ketersediaan dan kontrol bergantung pada perangkat, ROM, player, dan jalur audio aktif. |
 
 ---
@@ -232,339 +292,114 @@ Contoh konfigurasi dari proses pengembangan dan pengujian dapat tersedia di fold
 
 **&#127468;&#127463; English**
 
-The Equalizer Engine is experimental and device-dependent. The current Android output-mix route is not a universal per-player or system-wide mixer. Effect availability, band count, and control behavior may vary by Android version, manufacturer implementation, and active audio route. Detecting an effect does not guarantee that every application or audio route is processed. Some effects require a compatible player-owned audio session.
+The Equalizer Engine is experimental and device-dependent. The Android output-mix route is not a universal per-player or system-wide mixer. Effect availability, band count, and control behavior may vary by Android version, manufacturer implementation, and active audio route. Detecting an effect does not guarantee that every application or audio route is processed. Some effects require a compatible player-owned audio session.
+
+For MediaProjection PCM analysis, FFT and Hop describe analysis-window and sampling-step behavior; they are not a guarantee of end-to-end screen latency. Actual visual response also depends on device performance, capture scheduling, audio routing, and display refresh behavior.
 
 **&#127470;&#127465; Bahasa Indonesia**
 
-Equalizer Engine masih eksperimental dan bergantung pada perangkat. Jalur output-mix Android saat ini bukan mixer universal per-player atau mixer seluruh sistem. Ketersediaan efek, jumlah band, dan perilaku kontrol dapat berbeda menurut versi Android, implementasi produsen, serta jalur audio aktif. Efek yang terdeteksi tidak menjamin seluruh aplikasi atau jalur audio ikut diproses. Beberapa efek memerlukan audio session milik player yang kompatibel.
+Equalizer Engine masih eksperimental dan bergantung pada perangkat. Jalur output-mix Android bukan mixer universal per-player atau mixer seluruh sistem. Ketersediaan efek, jumlah band, dan perilaku kontrol dapat berbeda menurut versi Android, implementasi produsen, serta jalur audio aktif. Efek yang terdeteksi tidak menjamin seluruh aplikasi atau jalur audio ikut diproses. Beberapa efek memerlukan audio session milik player yang kompatibel.
+
+Pada analisis PCM MediaProjection, FFT dan Hop menjelaskan perilaku jendela analisis dan langkah sampling; keduanya bukan jaminan latency visual dari awal hingga layar. Respons visual aktual juga dipengaruhi performa perangkat, penjadwalan capture, routing audio, dan refresh rate layar.
 
 ---
 
 <a id="changelog"></a>
 
-## Development History & Changelog | Riwayat Pengembangan
+## Development History &amp; Changelog | Riwayat Pengembangan
 
-This history is arranged from the newest development line to the project's earlier milestones. The overview below gives readers a quick, readable timeline; the expandable notes underneath provide additional implementation context.
+This summary covers the documented development line from **V3.0.20.0 through V3.0.38.2**. It groups related work into milestones so the history remains readable without losing the major changes.
 
-Riwayat ini disusun dari lini pengembangan terbaru menuju milestone proyek sebelumnya. Ringkasan di bawah memudahkan pembaca melihat perjalanan versi, sedangkan bagian yang dapat dibuka di bawahnya berisi konteks implementasi lebih lengkap.
+Ringkasan ini mencakup lini pengembangan yang terdokumentasi dari **V3.0.20.0 sampai V3.0.38.2**. Perubahan yang saling berkaitan dikelompokkan menjadi beberapa milestone agar riwayat tetap mudah dibaca tanpa menghilangkan pembaruan utama.
+
+> 📜 **Full changelog / Changelog lengkap:** [Open `app/CHANGELOG.md`](app/CHANGELOG.md) for the complete, cumulative, version-by-version development record. This README keeps a shorter curated overview for visitors.
+>
+> 📜 **Riwayat lengkap:** [Buka `app/CHANGELOG.md`](app/CHANGELOG.md) untuk melihat catatan pengembangan kumulatif dan perubahan setiap versi secara lebih terperinci. README ini tetap menyediakan ringkasan pilihan agar pengunjung lebih mudah membaca perkembangan utama.
 
 <p align="center">
   <a href="https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/commits/main">
-    <img src="https://img.shields.io/badge/GitHub-Commit%20History-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Commit History">
+    <img src="https://img.shields.io/badge/GitHub-Commit%20History-181717?style=for-the-badge&amp;logo=github&amp;logoColor=white" alt="GitHub Commit History">
   </a>
   <a href="https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/releases">
-    <img src="https://img.shields.io/badge/GitHub-Releases-2F81F7?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Releases">
+    <img src="https://img.shields.io/badge/GitHub-Releases-2F81F7?style=for-the-badge&amp;logo=github&amp;logoColor=white" alt="GitHub Releases">
   </a>
 </p>
 
----
+### V3.0.38.2 — Latest | Terbaru
 
-### Latest Development Line | V3.0.10–V3.0.19.0
+**Exact Display Gap &amp; Symmetric Header Beam Transitions** · `versionCode 126`
 
-**The current Version 3 development line** — from output-safety refinements to the latest Equalizer, Display, scrolling, interface, and real-time audio-response improvements.
-
-**Lini pengembangan Versi 3 saat ini** — dari penyempurnaan keamanan output hingga pembaruan Equalizer, Display, scrolling, antarmuka, dan respons audio real-time terbaru.
-
-- **V3.0.19.0 — Real-Time PCM Catch-Up & Faster Response:** Prevented stale MediaProjection PCM backlog from keeping the visualizer behind live playback, introduced a faster time-based attack/release response curve shared by Live Display and Floating layers, preserved the existing low/mid/high frequency-analysis paths, and added PCM worker diagnostics.
-- **V3.0.18.9 — Main Header Light Sweep & Theme Studio Sparkle:** Added a diagonal light sweep and restrained sparkle particles over the main-page title, with Theme Studio-aware colors and lifecycle-controlled animation.
-- **V3.0.18 — Display Geometry & EQ Polish:** Expanded EQ presets and refined Band Analyzer filtering, Live Display geometry, scroll rails, first-open rail visibility, theme-aware toasts, spacing, and animations.
-- **V3.0.17 — Import & Workflow Validation:** Improved backup/import validation, runtime-permission review, scene status, layer-position controls, and mode-safe parameter linking.
-- **V3.0.16 — Multi-Layer Linking:** Added per-slider linking across compatible layers, global FFT/Hop explanations, and more consistent theme-aware notification controls.
-- **V3.0.15 — Numeric Preview & Scene Workflow:** Added reversible live numeric previews, improved Theme Studio repaint behavior and numeric dialogs, and introduced Scene Save To.
-- **V3.0.14 — FFT & Notification Refinements:** Refined FFT responsiveness, frequency-range selection, diagnostics, Theme Studio color handling, and notification cold-start restoration.
-- **V3.0.13 — Theme-Aware Controls:** Added visible Play/Pause indicators to theme-aware switches and refined EQ preset dropdown animation.
-- **V3.0.12 — EQ Controls & Effect Grouping:** Reorganized EQ effect groups, clarified restricted Preamp/Reverb behavior, and polished themed controls and screen motion.
-- **V3.0.11 — EQ UI & Profile Scrolling:** Refined EQ effect controls, added Floating Profile drag auto-scroll and glass scroll feedback, and improved Display Live fitting.
-- **V3.0.10 — Output Safety:** Added fail-closed output-safety handling for the experimental EQ output-mix Preamp route and refined effect switches and profile scrolling.
-
----
-
-### V2.4.32 — Final Release of Version 2
-
-V2.4.32 was the final documented V2 milestone before the project moved into the Version 3 Equalizer Engine development line.
-
-V2.4.32 merupakan milestone V2 terakhir yang terdokumentasi sebelum proyek beralih ke lini pengembangan Equalizer Engine Versi 3.
-
-- **Live Engine Restored:** Restored the V2.4.30 Display/Choreographer preview scheduling and live interpolation; removed the V2.4.31 changes associated with frozen previews.
-- **Display Glow Optimization:** Reduced the in-app Display preview glow while keeping the Floating renderer's full glow treatment intact.
-- **Renderer Integrity:** Preserved FFT delivery, 20 Hz–20 kHz mapping, frame-synchronized animation, Single/Horizontal geometry, and overlay position/rotation behavior.
-- **Simultaneous Rendering:** Kept Display preview and Floating rendering active together without scroll-triggered pauses or an imposed Display frame cap.
-- **Live Hz Tracking:** Made the Live Hz indicators follow the configured total bar count.
-- **100-Color Palette Album:** Added 100 color presets with live preview and Apply/Cancel behavior.
-- **Floating Profile Expansion:** Redesigned the profile interface to support up to 12 floating overlay profiles.
-- **General UI Refinement:** Polished the V2 interface and workflow. The documented package used versionCode 61.
-
----
-
-### V1.x — Original Visualizer Foundation
-
-V1.x established the original floating audio visualizer foundation. For the historical V1 feature details and surviving development records, please review the repository's commit history and the historical README revision.
-
-V1.x menjadi fondasi awal floating audio visualizer. Untuk rincian fitur V1 dan arsip pengembangan yang masih tersedia, silakan lihat riwayat commit repository serta revisi README historis.
-
-- [Browse the complete GitHub commit history](https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/commits/main)
-- [View the historical V1 README commit](https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/commit/4aa7b510cac972d0fe655698b98a61957ab53311)
-- [Browse published GitHub Releases](https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/releases)
-
-<sub>Note: A root-level `CHANGELOG.md` is not currently present in the repository. The links above therefore point directly to the available GitHub commit and release records rather than to a file path that would return a missing page.</sub>
-
----
-
-### Detailed Implementation Notes | Rincian Implementasi
-
-The summaries above are intentionally compact. Open a milestone below to read its expanded notes.
-
-Ringkasan di atas sengaja dibuat singkat. Buka milestone di bawah untuk membaca rincian implementasi yang lebih lengkap.
-
-<details>
-<summary><strong>V3.0.19.0</strong> — Real-Time PCM catch-up, faster response, and audio diagnostics</summary>
-
-**EN**
-- Update the MediaProjection PCM worker to drain already-buffered complete Hop blocks into the rolling 4096-sample window before running the next FFT. This preserves PCM sample order and the rolling history while publishing only the newest complete window when intermediate FFT windows have become stale.
-- Bound the additional catch-up drain to 64 Hops per pass to avoid an unbounded drain loop. When no backlog exists, analysis continues at the configured Hop cadence.
-- Replace the legacy 20 Hz-derived smoothing curve with direct time constants evaluated using actual frame delta time. At Response 41%, the approximate attack and release time constants are 16.6 ms and 38.9 ms.
-- Use the same response equation in MainActivity Live Display and FloatingVisualizerService layer rendering to keep their response behavior aligned across display refresh rates.
-- Preserve FFT 4096, Hop 256, stereo L/R transforms, RMS magnitude combination, the dedicated 256-band Single/DJ frequency bank, the Horizontal 64-band log map, selected frequency ranges, and existing fixed per-route calibration.
-- Do not add frame-peak, content-dependent, or whole-spectrum gain normalization.
-- Add periodic `FloatingDJ.Audio` / `PCM live` diagnostics containing `batchHops`, configured Hop interval, publish interval, current/average analysis time, and whether the catch-up drain limit was reached.
-- Keep the technical limit explicit: Hop 256 at 44.1 kHz is a 5.80 ms analysis step, not a guaranteed 5.80 ms screen-to-screen latency. FFT 4096 remains a 92.9 ms analysis window with approximately 10.77 Hz/bin spacing at 44.1 kHz.
-- Preserve `versionName 3.0.19.0` and `versionCode 105`.
+- **Display geometry parity:** Single-mode segment gaps, minimum segment height, and corner radius now scale with the selected Floating layer's fitted height. Horizontal-mode thickness and gap use the same viewport-fit ratio, with glow inset accounted for before layout margins are calculated.
+- **Smoother title loop:** Header-beam reveal and exit use matching 200 ms quintic easing. The beam grows from 10% to full length, then contracts to 10% while fading out, creating a matching loop seam.
+- **Rotation preserved:** The 8.0-second cycle, bloom/rotation boundary, clockwise entry spin, overlapping endpoint counter-turn, travel positions, and endpoint timing remain unchanged.
+- **Version metadata:** Module and Android manifest metadata now report `3.0.38.2` / `126`.
+- **Preserved systems:** Audio capture, MediaProjection PCM, FFT/Hop, EQ DSP, profiles, scenes, floating renderer, and notification controls are retained.
 
 **ID**
-- Memperbarui worker PCM MediaProjection agar membaca blok Hop lengkap yang sudah tersedia di buffer dan memasukkannya ke rolling window 4096 sampel sebelum menjalankan FFT berikutnya. Urutan sampel PCM dan riwayat rolling window tetap dipertahankan; ketika jendela FFT perantara sudah tertinggal, hanya jendela terbaru yang dianalisis dan dipublikasikan.
-- Membatasi proses catch-up tambahan hingga 64 Hop per putaran agar proses drain tidak berjalan tanpa batas. Ketika tidak ada antrean, analisis tetap berjalan mengikuti cadence Hop yang dikonfigurasi.
-- Mengganti kurva smoothing lama yang diturunkan dari referensi 20 Hz dengan time constant langsung yang dihitung menggunakan delta waktu frame aktual. Pada Response 41%, perkiraan time constant attack dan release masing-masing adalah 16,6 ms dan 38,9 ms.
-- Menggunakan persamaan respons yang sama pada Live Display MainActivity dan rendering layer FloatingVisualizerService agar perilaku keduanya selaras pada berbagai refresh rate layar.
-- Mempertahankan FFT 4096, Hop 256, transformasi stereo L/R, kombinasi magnitudo RMS, frequency bank Single/DJ khusus 256-band, peta log Horizontal 64-band, rentang frekuensi pilihan, serta kalibrasi tetap per jalur yang sudah ada.
-- Tidak menambahkan normalisasi gain berbasis frame-peak, content-dependent, atau whole-spectrum.
-- Menambahkan diagnostik berkala `FloatingDJ.Audio` / `PCM live` yang memuat `batchHops`, interval Hop yang dikonfigurasi, interval publikasi, waktu analisis saat ini/rata-rata, dan informasi apakah batas drain catch-up tercapai.
-- Memperjelas batas teknis: Hop 256 pada 44,1 kHz merupakan langkah analisis 5,80 ms, bukan jaminan latency visual layar-ke-layar sebesar 5,80 ms. FFT 4096 tetap menggunakan jendela analisis 92,9 ms dengan jarak sekitar 10,77 Hz/bin pada 44,1 kHz.
-- Mempertahankan `versionName 3.0.19.0` dan `versionCode 105`.
+- **Kesamaan geometri Display:** Gap segmen mode Single, tinggi minimum segmen, dan radius sudut kini mengikuti skala tinggi Floating layer yang dipilih. Pada mode Horizontal, thickness dan gap menggunakan rasio penyesuaian viewport yang sama, dengan inset glow dihitung sebelum margin layout ditentukan.
+- **Loop judul lebih halus:** Kemunculan dan akhir header beam menggunakan easing quintic 200 ms yang seimbang. Garis tumbuh dari 10% ke ukuran penuh, lalu mengecil kembali ke 10% sambil memudar agar sambungan loop lebih konsisten.
+- **Rotasi dipertahankan:** Siklus 8 detik, batas bloom/rotasi, putaran masuk searah jarum jam, counter-turn endpoint yang overlap, posisi pergerakan, dan waktu endpoint tidak diubah.
+- **Metadata versi:** Metadata module dan Android manifest kini menunjukkan `3.0.38.2` / `126`.
+- **Sistem yang dipertahankan:** Audio capture, MediaProjection PCM, FFT/Hop, EQ DSP, profile, scene, floating renderer, dan kontrol notifikasi tetap dipertahankan.
 
-</details>
+### V3.0.38.0–V3.0.38.1 — Display Parity &amp; Hold Navigator
 
-<details>
-<summary><strong>V3.0.18</strong> — Display geometry, scroll rails, EQ presets, and UI polish</summary>
-
-**EN**
-- Expanded the built-in EQ preset library for detected 5-band and 10-band layouts.
-- Refined Band Analyzer filtering and Live Display geometry.
-- Improved first-open Equalizer rail visibility and right-side scroll gutters.
-- Refined theme-aware toast messages, interface spacing, and animations.
-- Preserved versionName 3.0.18 and versionCode 95.
+- Matched Live Display geometry more closely to the active Floating renderer, including thickness, gap, glow reservation, split margins, and responsive canvas behavior.
+- Made Live Preview frequency labels and mode information follow the selected preview profile. Removed the profile picker from Global Audio Analysis because FFT/Hop are shared engine settings; the Response Engine remains profile-aware.
+- Refined portrait/landscape canvas dimensions, header spacing, and the section navigator's 1.5-second hold interaction with an expanding glass ring.
+- Fixed the missing `expandingWindowPaint` declaration and rendered the hold effect as a bounded outer ring rather than a filled circle.
 
 **ID**
-- Memperluas pustaka preset EQ untuk susunan 5-band dan 10-band yang terdeteksi.
-- Merapikan penyaringan Band Analyzer dan geometri Live Display.
-- Memperbaiki visibilitas rail Equalizer saat pertama dibuka dan gutter scrolling sisi kanan.
-- Merapikan toast sesuai tema, jarak antarmuka, dan animasi.
-- Mempertahankan versionName 3.0.18 dan versionCode 95.
+- Menyamakan geometri Live Display dengan Floating renderer aktif, termasuk thickness, gap, glow reservation, split margin, dan perilaku canvas responsif.
+- Membuat label frekuensi serta informasi mode Live Preview mengikuti profile yang dipilih. Pemilih profile di Global Audio Analysis dihapus karena FFT/Hop merupakan pengaturan engine bersama; Response Engine tetap mengikuti profile.
+- Merapikan ukuran canvas portrait/landscape, jarak header, serta interaksi hold navigator 1,5 detik dengan glass ring yang mengembang.
+- Memperbaiki deklarasi `expandingWindowPaint` yang hilang dan menggambar efek hold sebagai ring luar yang dibatasi, bukan lingkaran penuh.
 
-</details>
+### V3.0.35.0–V3.0.37.0 — Responsive Display &amp; Audio Tracking
 
-<details>
-<summary><strong>V3.0.17</strong> — Import validation and workflow refinements</summary>
-
-**EN**
-- Improved general backup/import validation and runtime-permission review.
-- Refined scene status, layer-position controls, and mode-safe parameter linking.
-- Improved the Equalizer page scroll indicator.
+- Refined the title's continuous endpoint turn and synchronized beam travel/rotation. Improved horizontal Live Display geometry and reduced preview drawing allocations through buffer and geometry reuse.
+- Added Projection Horizontal local-peak retention per logarithmic frequency window and expanded PCM diagnostics with low/mid/high average and peak values.
+- Expanded the Horizontal preview across the available landscape viewport, introduced a stable preview canvas, and separated Response Engine and Global Audio Analysis into dedicated cards.
 
 **ID**
-- Memperkuat validasi backup/impor umum dan pemeriksaan izin runtime.
-- Merapikan status scene, kontrol posisi layer, dan Linked parameter yang sesuai mode.
-- Meningkatkan indikator scrolling halaman Equalizer.
+- Merapikan endpoint turn judul yang berkesinambungan serta sinkronisasi pergerakan dan rotasi beam. Geometri Live Display Horizontal ditingkatkan dan alokasi saat menggambar preview dikurangi melalui penggunaan ulang buffer dan geometri.
+- Menambahkan local-peak retention pada Projection Horizontal untuk setiap jendela frekuensi logaritmik serta memperluas diagnostik PCM dengan nilai rata-rata dan puncak low/mid/high.
+- Memperluas preview Horizontal agar mengisi viewport landscape yang tersedia, menghadirkan canvas preview stabil, serta memisahkan Response Engine dan Global Audio Analysis ke dalam kartu khusus.
 
-</details>
+### V3.0.30.0–V3.0.34.0 — Navigation, Title Motion &amp; Layout Refinement
 
-<details>
-<summary><strong>V3.0.16</strong> — Multi-layer linking and notification consistency</summary>
-
-**EN**
-- Introduced per-slider linking to multiple compatible layers.
-- Added global FFT/Hop explanations.
-- Synchronized Start/Stop notification controls and theme-aware contrast.
+- Introduced a floating section navigator with tap-to-next-section and hold-to-bottom behavior, progress feedback, and theme-aware glass styling.
+- Iterated on the title animation, including one-way beam travel, endpoint counter-turn, per-glyph impact, synchronized gradient motion, and loop-state restoration.
+- Improved profile drag/reorder behavior, section anchors, landscape scrolling, linked-control layouts, and studio-dialog scrolling. V3.0.34.0 also included a Kotlin layout-parameter compile repair.
 
 **ID**
-- Memperkenalkan Linked per-slider ke beberapa layer kompatibel.
-- Menambahkan penjelasan FFT/Hop global.
-- Menyinkronkan kontrol Start/Stop notifikasi dan kontras sesuai tema.
+- Menghadirkan section navigator mengambang dengan fungsi tap untuk berpindah ke bagian berikutnya dan hold untuk menuju bagian bawah, dilengkapi indikator progress serta glass styling sesuai tema.
+- Menyempurnakan animasi judul, termasuk pergerakan beam satu arah, counter-turn di endpoint, efek per-huruf, gerakan gradient yang sinkron, dan pemulihan state loop.
+- Meningkatkan perilaku drag/reorder profile, section anchor, scrolling landscape, layout kontrol Linked, dan scrolling studio dialog. V3.0.34.0 juga mencakup perbaikan compile Kotlin pada layout parameter.
 
-</details>
+### V3.0.25.0–V3.0.29.0 — Visual Identity &amp; Layer Workflow
 
-<details>
-<summary><strong>V3.0.15</strong> — Reversible numeric preview and scene workflow</summary>
-
-**EN**
-- Added reversible live numeric previews.
-- Corrected Theme Studio repaint behavior.
-- Refined numeric dialogs and bar-appearance contrast.
-- Added Scene Save To.
+- Refined Light-theme boundaries and slider contrast, introduced the cyan-to-blue Glossy palette, and added kinetic per-letter title impact.
+- Updated adaptive and legacy launcher artwork, refined title geometry and glyph synchronization, and improved workspace identity.
+- Added Linked Response Mode propagation and smoother, screen-coordinate-aware layer drag/reorder behavior.
 
 **ID**
-- Menambahkan preview angka real-time yang dapat dibatalkan.
-- Memperbaiki repaint Theme Studio.
-- Merapikan dialog numerik dan kontras tampilan bar.
-- Menambahkan Scene Save To.
+- Merapikan batas panel dan kontras slider pada tema Light, memperbarui palet Glossy cyan-to-blue, serta menambahkan efek kinetik pada setiap huruf judul.
+- Memperbarui artwork launcher adaptive dan legacy, menyempurnakan geometri judul dan sinkronisasi efek huruf, serta merapikan identitas workspace.
+- Menambahkan propagasi Linked Response Mode dan meningkatkan drag/reorder layer agar lebih halus serta akurat terhadap koordinat layar.
 
-</details>
+### V3.0.20.0–V3.0.24.0 — Pinned Header, Response Controls &amp; Title Animation
 
-<details>
-<summary><strong>V3.0.14</strong> — FFT responsiveness and notification restoration</summary>
-
-**EN**
-- Refined FFT decoding and responsiveness, frequency-range selection, and diagnostics.
-- Improved Theme Studio color handling and numeric effect dialogs.
-- Refined notification cold-start restoration.
+- Added a pinned glass header, theme-aware title sweep, scroll-edge glass feedback, and viewport-aligned scroll rail.
+- Introduced Advanced Attack/Release controls with per-profile persistence, Normal/Advanced Response modes, and live time-constant readouts.
+- Refined the title into a bloom-to-slash sequence with header-relative motion, clipping protection, horizontal movement, and synchronized title transforms.
 
 **ID**
-- Merapikan decoding FFT dan responsivitas, pemilihan rentang frekuensi, serta diagnostik.
-- Meningkatkan pengelolaan warna Theme Studio dan dialog angka efek.
-- Merapikan pemulihan notifikasi saat cold-start.
+- Menambahkan pinned glass header, title sweep yang mengikuti tema, feedback glass pada batas scrolling, dan scroll rail yang mengikuti viewport.
+- Menghadirkan kontrol Advanced Attack/Release dengan penyimpanan per-profile, mode Response Normal/Advanced, serta tampilan nilai time constant secara langsung.
+- Menyempurnakan judul menjadi animasi bloom-to-slash dengan pergerakan relatif terhadap header, perlindungan clipping, gerakan horizontal, dan transformasi judul yang tersinkron.
 
-</details>
-
-<details>
-<summary><strong>V3.0.13</strong> — Theme-aware switches and preset animation</summary>
-
-**EN**
-- Added visible Play/Pause glyphs to theme-aware switches.
-- Refined EQ preset dropdown reveal and row animation.
-
-**ID**
-- Menambahkan ikon Play/Pause pada switch yang mengikuti tema.
-- Merapikan animasi dropdown dan baris preset EQ.
-
-</details>
-
-<details>
-<summary><strong>V3.0.12</strong> — EQ effect grouping and interaction polish</summary>
-
-**EN**
-- Reorganized EQ effect groups.
-- Clarified restricted Preamp/Reverb behavior.
-- Refined theme-aware controls and screen motion.
-
-**ID**
-- Menata ulang kelompok efek EQ.
-- Memperjelas batasan Preamp/Reverb.
-- Merapikan kontrol bertema dan animasi layar.
-
-</details>
-
-<details>
-<summary><strong>V3.0.11</strong> — EQ controls, profile auto-scroll, and Display fitting</summary>
-
-**EN**
-- Refined EQ effect controls.
-- Added Floating Profile drag auto-scroll and glass scroll feedback.
-- Improved Display Live fitting.
-
-**ID**
-- Merapikan kontrol efek EQ.
-- Menambahkan auto-scroll saat Floating Profile digeser dan indikator scroll glass.
-- Meningkatkan penyesuaian Display Live.
-
-</details>
-
-<details>
-<summary><strong>V3.0.10</strong> — Output safety and control refinements</summary>
-
-**EN**
-- Added fail-closed output safety for the experimental EQ output-mix Preamp route.
-- Refined effect switches and profile scrolling while retaining saved values safely.
-
-**ID**
-- Menambahkan perlindungan output fail-closed pada jalur Preamp output-mix EQ eksperimental.
-- Merapikan switch efek dan scrolling profile dengan tetap mempertahankan nilai tersimpan secara aman.
-
-</details>
-
-<details>
-<summary><strong>V2.4.32</strong> — Final V2 implementation notes</summary>
-
-**EN**
-- Restored the complete V2.4.30 Display/Choreographer preview scheduling and live interpolation.
-- Removed V2.4.31 preview pausing, 30 FPS pacing, and parent-only invalidation changes associated with frozen Display previews.
-- Reduced only the in-app Display preview glow using a smaller, lower-intensity halo treatment.
-- Preserved the full Floating Service glow renderer, FFT delivery, 20 Hz–20 kHz mapping, frame-synchronized animation, Single/Horizontal geometry, and overlay position/rotation logic.
-- Kept Display and Floating renderers running simultaneously without scroll-triggered pauses or Display frame caps.
-- Updated Live Hz tracking to follow the configured total bar count.
-- Added a 100-preset color album with live preview and Apply/Cancel.
-- Redesigned Floating Profile UI to support up to 12 floating overlays.
-- Refined general UI/UX; documented versionCode: 61.
-
-**ID**
-- Mengembalikan penjadwalan preview Display/Choreographer dan interpolasi real-time V2.4.30 secara penuh.
-- Menghapus perubahan preview pause, pacing 30 FPS, dan invalidation parent-only dari V2.4.31 yang berkaitan dengan preview Display macet.
-- Mengurangi glow hanya pada preview Display di dalam aplikasi menggunakan halo yang lebih kecil dan lebih ringan.
-- Mempertahankan Floating Service glow renderer, pengiriman FFT, pemetaan 20 Hz–20 kHz, animasi sinkron-bingkai, geometri Single/Horizontal, serta logika posisi/rotasi overlay.
-- Menjaga renderer Display dan Floating berjalan bersamaan tanpa jeda akibat scrolling atau pembatasan frame Display.
-- Memperbarui Live Hz tracking agar mengikuti jumlah total bar yang dikonfigurasi.
-- Menambahkan album warna berisi 100 preset dengan live preview serta Apply/Cancel.
-- Mendesain ulang Floating Profile UI agar mendukung hingga 12 floating overlay.
-- Merapikan UI/UX secara umum; versionCode terdokumentasi: 61.
-
-</details>
-
-<details>
-<summary><strong>V3.0.0–V3.0.9</strong> — Experimental Equalizer Engine milestone</summary>
-
-**EN**
-- **Integrated Equalizer Engine:** Added an experimental EQ Output Mix engine alongside the existing visualizer system.
-- **Adaptive EQ Bands:** Added 5-band and 10-band layouts according to the active backend and device capabilities.
-- **Device Capability Detection:** Added effect inventory and runtime capability checks rather than assuming every device supports the same effects.
-- **Preset Management:** Added custom preset creation, Save, Save To, Rename, Delete, Current State handling, and Flat reset.
-- **Starter EQ Presets:** Added starter curves for 5-band and 10-band configurations.
-- **Precision Band Controls:** Added direct dB value input, individual band reset, and horizontal navigation for multi-band layouts.
-- **Preamp:** Added input-gain control before EQ processing when supported by the active processing engine.
-- **Bass Boost and Virtualizer:** Integrated additional audio-effect controls where device support and control ownership allow.
-- **Dynamics Processing Limiter:** Added an experimental limiter stage with configurable enable/disable behavior on supported engines.
-- **Reverb Capability Detection:** Added Reverb detection and attachment requirement information. Global Reverb is not assumed.
-- **EQ Preset Import/Export:** Added dedicated EQ preset exchange.
-- **Modern EQ Workspace:** Added a dedicated Equalizer Activity with Theme Studio integration, modern faders, responsive band canvas, and improved preset controls.
-- **Notification Integration:** Expanded notification actions for supported Floating and EQ controls.
-- **State and Lifecycle Refinements:** Improved working-state handling and EQ configuration restoration.
-
-**ID**
-- **Equalizer Engine Terintegrasi:** Menambahkan EQ Output Mix eksperimental di samping sistem visualizer yang sudah ada.
-- **Band EQ Adaptif:** Menghadirkan susunan 5-band dan 10-band sesuai backend aktif dan kemampuan perangkat.
-- **Deteksi Kapabilitas Perangkat:** Menambahkan pemeriksaan inventory effect dan kapabilitas runtime, bukan menganggap semua perangkat memiliki dukungan yang sama.
-- **Pengelolaan Preset:** Menambahkan pembuatan preset, Save, Save To, Rename, Delete, pengelolaan Current State, dan reset Flat.
-- **Preset EQ Awal:** Menambahkan kurva awal untuk konfigurasi 5-band dan 10-band.
-- **Kontrol Band Presisi:** Menambahkan input nilai dB langsung, reset setiap band, dan navigasi horizontal untuk layout multi-band.
-- **Preamp:** Menambahkan kontrol input gain sebelum proses EQ pada engine yang mendukung.
-- **Bass Boost dan Virtualizer:** Mengintegrasikan kontrol efek audio tambahan sesuai dukungan perangkat dan kepemilikan kontrol effect.
-- **Dynamics Processing Limiter:** Menambahkan stage limiter eksperimental dengan kontrol aktif/nonaktif pada engine yang mendukung.
-- **Deteksi Reverb:** Menambahkan deteksi dukungan Reverb dan informasi persyaratan attachment. Reverb global tidak diasumsikan tersedia.
-- **Import/Export Preset EQ:** Menambahkan pertukaran preset EQ secara terpisah.
-- **Workspace EQ Modern:** Menghadirkan Equalizer Activity khusus dengan integrasi Theme Studio, fader modern, canvas band adaptif, dan pengelolaan preset yang diperbarui.
-- **Integrasi Notifikasi:** Menambahkan kontrol notifikasi untuk fungsi Floating dan EQ yang didukung.
-- **Penyempurnaan State dan Lifecycle:** Memperbaiki pengelolaan working state dan pemulihan konfigurasi EQ.
-
-<blockquote>
-  <strong>Audio limitation / Batasan audio:</strong> The output-mix/session-0 route is experimental and device-dependent. Detecting or constructing an effect does not prove that all third-party applications or every audio route are processed. Reverb requires a compatible player-owned session and auxiliary send path.
-  <br>
-  Jalur output-mix/session-0 masih eksperimental dan bergantung pada perangkat. Effect yang terdeteksi atau berhasil dibuat tidak membuktikan bahwa seluruh aplikasi pihak ketiga atau semua jalur audio ikut diproses. Reverb memerlukan session milik player yang kompatibel dan jalur auxiliary send.
-</blockquote>
-
-<sub>Milestone note: the implementation report groups the documented progression across V3.0.0–V3.0.9. A separate V3.0.4 change record was not available in the implementation dossier.</sub>
-
-<sub>Catatan milestone: laporan implementasi mengelompokkan progres yang terdokumentasi pada V3.0.0–V3.0.9. Catatan perubahan V3.0.4 secara terpisah tidak tersedia dalam dossier implementasi.</sub>
-
-</details>
-
----
-
-**Release and commit references / Referensi rilis dan commit**
-
-- [Browse all repository commits](https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/commits/main)
-- [Browse GitHub Releases](https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/releases)
-- [View the historical V1 README commit](https://github.com/rifkiwork74/Projects-Floating-DJ-Visualizer-By-Rifki/commit/4aa7b510cac972d0fe655698b98a61957ab53311)
-
-<sub>Historical accuracy: V1.x and V2.4.32 are presented as documented milestones. Where the surviving records do not identify a precise patch or public release, this README links to repository history instead of inventing a version-specific record.</sub>
-
-<sub>Akurasi riwayat: V1.x dan V2.4.32 ditampilkan sebagai milestone yang terdokumentasi. Jika arsip yang tersedia tidak menunjukkan patch atau rilis publik secara pasti, README mengarahkan pembaca ke riwayat repository tanpa mengarang catatan versi tertentu.</sub>
+> **History note / Catatan riwayat:** The archived project changelog contains no separate V3.0.28.0 heading. This README therefore does not invent a dedicated V3.0.28.0 change entry. / Arsip changelog proyek tidak memiliki heading V3.0.28.0 secara terpisah. Karena itu README ini tidak mengarang catatan khusus untuk V3.0.28.0.
 
 ---
 
@@ -584,5 +419,5 @@ Ringkasan di atas sengaja dibuat singkat. Buka milestone di bawah untuk membaca 
 
 <p align="center">
   <strong>Made with passion by Rifki</strong><br>
-  <em>Floating DJ Visualizer - Visualize Your Sound.</em>
+  <em>Floating DJ Visualizer — Visualize Your Sound.</em>
 </p>
